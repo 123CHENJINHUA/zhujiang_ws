@@ -7,7 +7,7 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     tracer_light_pub_ = nh.advertise<std_msgs::String>("/tracer_light_control", 10);
     speed_pub_ = nh.advertise<geometry_msgs::Twist>("/speed", 10);
     emergency_stop_pub_ = nh.advertise<std_msgs::Bool>("/emergency_stop", 10);
-    ui_show_pub_ = nh.advertise<std_msgs::String>("/UI_show", 10);
+    ui_show_pub_ = nh.advertise<robot_msgs::ui_show>("/UI_show", 10);
     speach_client_ = nh.advertise<std_msgs::String>("/speach", 10);
     calling_client_ = nh.advertise<std_msgs::String>("/calling", 10);
 
@@ -20,8 +20,8 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     delivery_door_open_client_ = nh.serviceClient<robot_msgs::delivery>("/delivery_door_open");
 
 
-    // // 服务端
-    // ui_get_server_ = nh.advertiseService("/UI_get", &TaskManagerNode::uiGetCallback, this);
+    // 服务端
+    ui_get_server_ = nh.advertiseService("/UI_get", &TaskManagerNode::uiGetCallback, this);
 
     ROS_INFO("TaskManagerNode initialized.");
 }
@@ -76,11 +76,39 @@ bool TaskManagerNode::door_open(int num) {
     return deliveryDoorOpen(delivery_req);
 }
 
-// bool TaskManagerNode::uiGetCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
-//     res.success = true;
-//     res.message = "UI_get service called";
-//     return true;
-// }
+// 服务端回调实现
+bool TaskManagerNode::uiGetCallback(robot_msgs::ui_get::Request& req, robot_msgs::ui_get::Response& res) {
+    // 清空原有任务列表
+    task_list_.clear();
+
+    // 解析请求字符串
+    std::stringstream ss_groups(req.delivery_list.c_str());
+    std::string group;
+    while (std::getline(ss_groups, group, ';')) {
+        std::vector<int> task;
+        std::stringstream ss_values(group);
+        std::string value;
+        while (std::getline(ss_values, value, ',')) {
+            try {
+                task.push_back(std::stoi(value));
+            } catch (...) {
+                // 解析失败，返回错误
+                res.received = false;
+                return true;
+            }
+        }
+        if (task.size() == 4) {
+            task_list_.push_back(task);
+        } else {
+            res.received = false;
+            return true;
+        }
+    }
+
+    res.received = true;
+    ROS_INFO("Task list updated, size: %lu", task_list_.size());
+    return true;
+}
 
 void TaskManagerNode::workflow() {
     // 这里可以实现工作流逻辑
@@ -96,18 +124,22 @@ void TaskManagerNode::workflow() {
         ros::Duration(0.1).sleep();
     }
 
-    std_msgs::String ui_msg;
-    ui_msg.data = "ui_start ------------------";
+    robot_msgs::ui_show ui_msg;
+    ui_msg.battery = 100; // 假设电池电量为100%
+    ui_msg.odometry = 0.0; // 假设里程计为0
+    ui_msg.speed = 0.0; // 假设速度为0
+    ui_msg.working_time = 0.0; // 假设工作时间为0
+    ui_msg.network = "Good"; // 假设网络状态为 Good
+    ui_msg.task_status = 0; // 假设任务状态为0
     ui_show_pub_.publish(ui_msg);
+
     std_msgs::String speach_msg;
     speach_msg.data = "2";
     speach_client_.publish(speach_msg);
+
     std_msgs::String calling_msg;
     calling_msg.data = "1楼 1单元 1号";
     calling_client_.publish(calling_msg);
-
-
-
 
 }
 
@@ -119,7 +151,7 @@ int main(int argc, char** argv) {
     // 等待所有服务准备就绪
     // ros::service::waitForService("/delivery_cmd");
     // ros::service::waitForService("/delivery_door_open");
-    // ros::service::waitForService("/UI_get");
+
     // 等待动作客户端连接
     // node.navigation_to_pose_ac_.waitForServer();
     ROS_INFO("All services are ready and action client is connected.");

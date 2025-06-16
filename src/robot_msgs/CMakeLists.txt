@@ -10,10 +10,15 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+add_message_files(
+  FILES
+  ui_show.msg
+)
+
 add_service_files(
   FILES
   delivery.srv
-  ui.srv
+  ui_get.srv
 )
 
 generate_messages(

@@ -1,0 +1,7 @@
+string network
+float32 odometry
+float32 speed
+float32 working_time
+uint16 battery
+uint16 task_status
+
