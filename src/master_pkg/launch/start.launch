@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="master_pkg" type="task_manager_node" name="task_manager" output="screen" />
+    <node pkg="master_pkg" type="delivery_node" name="delivery" output="screen" />
+    <node pkg="ui_pkg" type="ui_node.py" name="ui" output="screen" />
+
+</launch>
