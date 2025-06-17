@@ -67,6 +67,7 @@ private:
 
     bool push_out(int num);
     bool door_open(int num);
+    bool door_ir_control(const std::string& status);
 
     // 服务端
     ros::ServiceServer ui_get_server_;

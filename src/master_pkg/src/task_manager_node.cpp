@@ -25,56 +25,7 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     ROS_INFO("TaskManagerNode initialized.");
 }
 
-// 任务分配设置
-void TaskManagerNode::taskAssign_setup() {
-    // 启动任务分配线程
-    std::thread task_thread(&TaskManagerNode::taskAssignLoop, this);
-    task_thread.detach();
-}
 
-// 任务分配函数
-void TaskManagerNode::assignTask(const std::vector<std::vector<int>>& tasks) {
-    if (!tasks.empty()) {
-        current_task_ = tasks.front();
-        rest_task_.clear();
-        for (size_t i = 1; i < tasks.size(); ++i) {
-            rest_task_.push_back(tasks[i]);
-        }
-    } else {
-        current_task_.clear();
-        rest_task_.clear();
-    }
-}
-
-void TaskManagerNode::taskAssignLoop() {
-    std::unique_lock<std::mutex> lock(task_list_mutex_);
-    ROS_INFO("start delivery---.");
-    while (ros::ok()) { 
-        // 等待有任务或被唤醒
-        task_cv_.wait(lock, [this]{ return !task_list_.empty() || !ros::ok(); });
-
-        while (!task_list_.empty()) {
-
-            //语音提示
-            std_msgs::String speach_msg;
-            speach_msg.data = "2";
-            speach_client_.publish(speach_msg);
-            //打电话
-            std_msgs::String calling_msg;
-            calling_msg.data = "1楼 1单元 1号";
-            calling_client_.publish(calling_msg);
-
-            // door_open(4);
-
-            // 发布任务分配信息
-            assignTask(task_list_);
-            task_list_.erase(task_list_.begin());
-            lock.unlock();
-            ros::Duration(5.0).sleep(); // 处理间隔
-            lock.lock();
-        }
-    }
-}
 
 // 机器人状态更新函数
 void TaskManagerNode::robot_status_update() {
@@ -185,6 +136,11 @@ bool TaskManagerNode::door_open(int num) {
     return deliveryCmd(delivery_req); 
 }
 
+bool TaskManagerNode::door_ir_control(const std::string& status) {
+    delivery_req.request.delivery_msgs = "ir " + status;
+    return deliveryCmd(delivery_req);
+}
+
 // ui指令服务端回调实现
 bool TaskManagerNode::uiGetCallback(robot_msgs::ui_get::Request& req, robot_msgs::ui_get::Response& res) {
     // 清空原有任务列表
@@ -221,6 +177,62 @@ bool TaskManagerNode::uiGetCallback(robot_msgs::ui_get::Request& req, robot_msgs
     return true;
 }
 
+// 任务分配设置
+void TaskManagerNode::taskAssign_setup() {
+    // 启动任务分配线程
+    std::thread task_thread(&TaskManagerNode::taskAssignLoop, this);
+    task_thread.detach();
+}
+
+// 任务分配函数
+void TaskManagerNode::assignTask(const std::vector<std::vector<int>>& tasks) {
+    if (!tasks.empty()) {
+        current_task_ = tasks.front();
+        rest_task_.clear();
+        for (size_t i = 1; i < tasks.size(); ++i) {
+            rest_task_.push_back(tasks[i]);
+        }
+    } else {
+        current_task_.clear();
+        rest_task_.clear();
+    }
+}
+
+void TaskManagerNode::taskAssignLoop() {
+    std::unique_lock<std::mutex> lock(task_list_mutex_);
+    ROS_INFO("start delivery---.");
+    while (ros::ok()) { 
+        // 等待有任务或被唤醒
+        task_cv_.wait(lock, [this]{ return !task_list_.empty() || !ros::ok(); });
+
+        while (!task_list_.empty()) {
+
+            ros::Duration(1.0).sleep(); // 处理间隔
+            door_ir_control("on");
+
+            //语音提示
+            std_msgs::String speach_msg;
+            speach_msg.data = "2";
+            speach_client_.publish(speach_msg);
+            //打电话
+            std_msgs::String calling_msg;
+            calling_msg.data = "1楼 1单元 1号";
+            calling_client_.publish(calling_msg);
+
+            door_open(4);
+
+            // 发布任务分配信息
+            assignTask(task_list_);
+            task_list_.erase(task_list_.begin());
+            lock.unlock();
+            ros::Duration(5.0).sleep(); // 处理间隔
+            lock.lock();
+
+            door_ir_control("off");
+        }
+    }
+}
+
 
 // main函数
 int main(int argc, char** argv) {
@@ -231,7 +243,7 @@ int main(int argc, char** argv) {
     // 发布者设置
     node.pub_setup();
     // 客户端设置
-    // node.client_setup();
+    node.client_setup();
 
     // 等待动作客户端连接
     // node.navigation_to_pose_ac_.waitForServer();
