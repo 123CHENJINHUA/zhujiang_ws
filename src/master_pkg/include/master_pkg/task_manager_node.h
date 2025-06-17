@@ -14,6 +14,8 @@
 #include <string>
 #include <sstream>
 
+#include <thread>
+#include <condition_variable>
 
 // 根据实际消息类型和服务类型包含头文件
 
@@ -22,7 +24,26 @@ class TaskManagerNode {
 private:
 
     // 用于存储待配送目标的列表
-    std::vector<std::vector<int>> task_list_; 
+    std::vector<std::vector<int>> task_list_;
+    std::vector<int> current_task_;
+    std::vector<std::vector<int>> rest_task_; 
+
+    void assignTask(const std::vector<std::vector<int>>& tasks);
+    void taskAssignLoop();
+    std::mutex task_list_mutex_; 
+    std::condition_variable task_cv_;
+
+    //机器人状态
+    int battery_ = 0; // 电池电量
+    int speed_ = 0; // 速度
+    double odometry_ = 0.0; // 里程计
+    double working_time_ = 0.0; // 工作时间
+    std::string network_ = "Good"; // 网络状态
+    int task_status_ = 0; // 任务状态
+    std::string current_task_show_ = ""; //
+    std::vector<std::string> rest_task_show_; // 剩余任务（数组）
+
+    void robot_status_update();
 
     // 发布者
     ros::Publisher tracer_light_pub_;
@@ -31,6 +52,8 @@ private:
     ros::Publisher ui_show_pub_;
     ros::Publisher speach_client_;
     ros::Publisher calling_client_;
+
+    void publishUiShowLoop();
 
     // 订阅者
     ros::Subscriber tracer_status_sub_;
@@ -53,7 +76,6 @@ private:
 
     // 客户端调用函数
     bool deliveryCmd(robot_msgs::delivery& req);
-    bool deliveryDoorOpen(robot_msgs::delivery& req);
 
     // 回调函数声明
     void tracerStatusCallback(const std_msgs::String::ConstPtr& msg);
@@ -65,6 +87,9 @@ private:
 public:
 
 TaskManagerNode(ros::NodeHandle& nh);
-void workflow();
+
+void pub_setup();
+void client_setup();
+void taskAssign_setup();
     
 };

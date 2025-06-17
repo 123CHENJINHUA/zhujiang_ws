@@ -2,15 +2,26 @@
 
 import sys
 sys.path.insert(0, "/home/cjh/miniconda3/envs/zhujiang/lib/python3.10/site-packages")
+sys.path.insert(0, "/home/cjh/zhujiang_ws/src")
 
 import rospy
 from std_msgs.msg import String
+import threading
+import time
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtCore import QObject, pyqtSignal
+from UI.zhujiang_ui import *
+
 
 from playsound import playsound
 from robot_msgs.msg import ui_show
 from robot_msgs.srv import ui_get, ui_getRequest, ui_getResponse
-class UiNode:
+
+class UiNode(QObject):
+    signal_recv_msg = pyqtSignal(str)  # Qt信号
+
     def __init__(self):
+        super(UiNode, self).__init__()
         # 订阅 /UI_show
         self.ui_show_sub = rospy.Subscriber("/UI_show", ui_show, self.ui_show_callback)
         # 订阅 /speach
@@ -24,7 +35,8 @@ class UiNode:
 
     # 订阅
     def ui_show_callback(self, msg):
-        rospy.loginfo("network: %s, odometry: %s, speed: %s, working_time: %s, battery: %s, task_status: %s", msg.network, msg.odometry, msg.speed, msg.working_time, msg.battery, msg.task_status)
+        # rospy.loginfo("network: %s, odometry: %s, speed: %s, working_time: %s, battery: %s, task_status: %s", msg.network, msg.odometry, msg.speed, msg.working_time, msg.battery, msg.task_status)
+        self.signal_recv_msg.emit(f"network: {msg.network}\nodometry: {msg.odometry}\nspeed: {msg.speed}\nworking_time: {msg.working_time}\nbattery: {msg.battery}\ntask_status: {msg.task_status}\ncurrent_task: {msg.current_task}\nrest_task: {msg.rest_task} ")  # 发射任务状态信号
 
     def speach_callback(self, msg):
         rospy.loginfo("Speach: %s", msg.data)
@@ -49,13 +61,103 @@ class UiNode:
             rospy.logerr(f"Service call failed: {e}")
             return None
 
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, comm_node):
+        super(MainWindow, self).__init__()
+        self.setupUi(self)
+        self.comm_node = comm_node
+        self.comm_node.signal_recv_msg.connect(self.set_recv_msgs)
+
+        self.delivery_list = []
+        self.delivery_list_show = []
+        self.manual_editing = False  #手动编辑锁
+
+        self.label_7.setStyleSheet("font-size: 24px;")
+        self.pushButton.clicked.connect(self.on_delivery_button_click)
+        self.pushButton_2.clicked.connect(self.on_settings_button_click)
+
+    def set_recv_msgs(self, msg):
+        # 将多行字符串按行分割
+        lines = msg.strip().split('\n')
+        msg_dict = {}
+        for line in lines:
+            if ':' in line:
+                key, value = line.split(':', 1)
+                msg_dict[key.strip()] = value.strip()
+        # 根据key设置不同label
+        if 'current_task' in msg_dict and not self.manual_editing:
+            self.label_6.setText(msg_dict['current_task'])
+        if 'rest_task' in msg_dict and not self.manual_editing:
+            # 处理rest_task为数组字符串的情况
+            rest = msg_dict['rest_task']
+            # 去除首尾的中括号和空格，然后按逗号分割
+            rest = rest.strip()
+            if rest.startswith('[') and rest.endswith(']'):
+                rest = rest[1:-1]
+            rest_list = [item.strip().strip("'").strip('"') for item in rest.split(',') if item.strip()]
+            # 存放到 delivery_list_show
+            self.delivery_list_show = rest_list if rest_list and rest_list != [''] else []
+            self.update_delivery_list_label()
+            self.delivery_list_show.clear()  # 清空显示列表
+        if 'network' in msg_dict:
+            self.label_11.setText("网络状态：\n" + msg_dict['network'])
 
 
-if __name__ == "__main__":
+    def on_settings_button_click(self):
+        self.manual_editing = True  # 开始手动编辑
+        building = self.textEdit_1.toPlainText().strip()
+        unit = self.textEdit_2.toPlainText().strip()
+        floor = self.textEdit_3.toPlainText().strip()
+        room = self.textEdit_4.toPlainText().strip()
+        if building and floor and unit:
+            delivery_info = f"{building},{unit},{floor},{room}"
+            delivery_info_show = f"{building}栋{unit}单元{floor}层{room}室"
+            self.delivery_list_show.append(delivery_info_show)
+            self.delivery_list.append(delivery_info)
+            self.update_delivery_list_label()
+            print("设置配送信息:", delivery_info)
+        else:
+            print("请填写完整的配送信息！")
+
+    def on_delivery_button_click(self):
+        if self.delivery_list:
+            # 拼接成服务需要的字符串格式
+            delivery_str = ";".join(self.delivery_list)
+            resp = self.comm_node.call_ui_get(delivery_str)
+            if resp and resp.received:
+                print("配送信息已发布:", delivery_str)
+                self.delivery_list.clear()
+                self.delivery_list_show.clear()
+                self.manual_editing = False  # 恢复自动刷新
+            else:
+                print("配送服务调用失败！")
+        else:
+            print("配送列表为空，请先设置配送信息！")
+
+    def update_delivery_list_label(self):
+        if self.delivery_list_show:
+            self.label_8.setText("\n".join(self.delivery_list_show))
+        else:
+            self.label_8.setText("配送列表为空")
+
+# 在单独线程中运行rospy.spin
+def ros_spin():
+    rospy.spin()
+
+def main(args=None):
+    app = QApplication(sys.argv)
     rospy.init_node("ui_node")
     node = UiNode()
     rospy.loginfo("Waiting for UI_get service...")
     node.ui_get_client.wait_for_service()
     rospy.loginfo("UI_get service is available.")
-    node.call_ui_get("1,1,1,1;2,2,2,2;3,3,3,3")
-    rospy.spin()
+    w = MainWindow(node)
+    w.show()
+    # 启动ROS spin线程
+    thread_spin = threading.Thread(target=ros_spin)
+    thread_spin.daemon = True
+    thread_spin.start()
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()

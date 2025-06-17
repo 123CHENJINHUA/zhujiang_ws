@@ -7,24 +7,14 @@ TcpServer* g_tcp_server = nullptr;
 bool deliveryCmdCallback(robot_msgs::delivery::Request& req, robot_msgs::delivery::Response& res) {
     if (g_tcp_server) {
         g_tcp_server->sendMessage(req.delivery_msgs);
-        std::string reply = g_tcp_server->receiveMessage(g_tcp_server->timeout_delivery_cmd);
-        if (reply.empty()) {
-            ROS_ERROR("Timeout or no response for: %s", req.delivery_msgs.c_str());
-            res.status_msgs = false;
-            return true;
-        }
-        ROS_INFO("MCU reply: %s", reply.c_str());
-        res.status_msgs = true;
-        return true;
-    }
-    ROS_ERROR("tcp server not available");
-    return false;
-}
 
-bool deliveryDoorOpenCallback(robot_msgs::delivery::Request& req, robot_msgs::delivery::Response& res) {
-    if (g_tcp_server) {
-        g_tcp_server->sendMessage(req.delivery_msgs);
-        std::string reply = g_tcp_server->receiveMessage(g_tcp_server->timeout_door_open);
+        // 根据命令内容选择不同的超时
+        int timeout = g_tcp_server->timeout_delivery_cmd;
+        if (req.delivery_msgs.find("door") != std::string::npos) {
+            timeout = g_tcp_server->timeout_door_open;
+        }
+
+        std::string reply = g_tcp_server->receiveMessage(timeout);
         if (reply.empty()) {
             ROS_ERROR("Timeout or no response for: %s", req.delivery_msgs.c_str());
             res.status_msgs = false;
@@ -59,8 +49,7 @@ int main(int argc, char** argv) {
     g_tcp_server = &tcp_server;
 
     ros::ServiceServer delivery_cmd_server = nh.advertiseService("/delivery_cmd", deliveryCmdCallback);
-    ros::ServiceServer delivery_door_open_server = nh.advertiseService("/delivery_door_open", deliveryDoorOpenCallback);
-    ROS_INFO("Service /delivery_cmd and /delivery_door_open are ready.");
+    ROS_INFO("Service /delivery_cmd is ready.");
     ros::spin();
     tcp_server.closeSocket();
     return 0;

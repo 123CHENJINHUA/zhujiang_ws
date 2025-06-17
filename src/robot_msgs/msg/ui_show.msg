@@ -4,4 +4,5 @@ float32 speed
 float32 working_time
 uint16 battery
 uint16 task_status
-
+string current_task
+string[] rest_task
