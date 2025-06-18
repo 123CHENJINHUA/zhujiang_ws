@@ -151,7 +151,7 @@
      <item>
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>配送状态</string>
+        <string>当前配送目标</string>
        </property>
       </widget>
      </item>
@@ -163,11 +163,22 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_12">
-       <property name="text">
-        <string>配送状态</string>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>配送进度</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>任务状态</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>

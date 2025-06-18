@@ -29,14 +29,14 @@ public:
             }
         });
 
-        ros::Duration(5.0).sleep(); // 模拟配送耗时
+        ros::Duration(5.1).sleep(); // 模拟配送耗时
         done = true;
         if (feedback_thread.joinable()) feedback_thread.join();
 
         // 结果
         robot_msgs::deliveryResult result;
         result.success = true;
-        result.info = "配送完成";
+        result.info = "Finish";
         as_.setSucceeded(result);
         ROS_INFO("Delivery succeeded.");
     }

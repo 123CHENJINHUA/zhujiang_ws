@@ -3,6 +3,7 @@ float32 odometry
 float32 speed
 float32 working_time
 uint16 battery
-uint16 task_status
+uint16 task_process
+string task_status
 string current_task
 string[] rest_task

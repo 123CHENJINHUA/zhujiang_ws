@@ -36,7 +36,7 @@ class UiNode(QObject):
     # 订阅
     def ui_show_callback(self, msg):
         # rospy.loginfo("network: %s, odometry: %s, speed: %s, working_time: %s, battery: %s, task_status: %s", msg.network, msg.odometry, msg.speed, msg.working_time, msg.battery, msg.task_status)
-        self.signal_recv_msg.emit(f"network: {msg.network}\nodometry: {msg.odometry}\nspeed: {msg.speed}\nworking_time: {msg.working_time}\nbattery: {msg.battery}\ntask_status: {msg.task_status}\ncurrent_task: {msg.current_task}\nrest_task: {msg.rest_task} ")  # 发射任务状态信号
+        self.signal_recv_msg.emit(f"network: {msg.network}\nodometry: {msg.odometry}\nspeed: {msg.speed}\nworking_time: {msg.working_time}\nbattery: {msg.battery}\ntask_process: {msg.task_process}\ntask_status: {msg.task_status}\ncurrent_task: {msg.current_task}\nrest_task: {msg.rest_task} ")  # 发射任务状态信号
 
     def speach_callback(self, msg):
         rospy.loginfo("Speach: %s", msg.data)
@@ -101,8 +101,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.delivery_list_show.clear()  # 清空显示列表
         if 'network' in msg_dict:
             self.label_11.setText("网络状态：\n" + msg_dict['network'])
+        if 'task_process' in msg_dict:
+            self.label_12.setText("进度：\n" + msg_dict['task_process'] + "%")
         if 'task_status' in msg_dict:
-            self.label_12.setText("进度：\n" + msg_dict['task_status'])
+            self.label_13.setText("任务状态：\n" + msg_dict['task_status'])
 
 
     def on_settings_button_click(self):

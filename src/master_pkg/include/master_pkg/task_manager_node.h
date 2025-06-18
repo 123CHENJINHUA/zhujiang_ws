@@ -46,7 +46,8 @@ private:
     double odometry_ = 0.0; // 里程计
     double working_time_ = 0.0; // 工作时间
     std::string network_ = "Good"; // 网络状态
-    int task_status_ = 0; // 任务状态
+    int task_process_ = 0; // 任务进度（0-100）
+    std::string task_status_ = "waitting..."; // 任务状态
     std::string current_task_show_ = ""; //
     std::vector<std::string> rest_task_show_; // 剩余任务（数组）
 

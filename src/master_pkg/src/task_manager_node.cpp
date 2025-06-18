@@ -99,6 +99,7 @@ void TaskManagerNode::publishUiShowLoop() {
         ui_msg.working_time = working_time_;
         ui_msg.network = network_;
         ui_msg.task_status = task_status_;
+        ui_msg.task_process = task_process_; // 任务进度
         ui_msg.current_task = current_task_show_;
         ui_msg.rest_task = rest_task_show_;
         ui_show_pub_.publish(ui_msg);
@@ -200,7 +201,7 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
     goal.room = task[3];
 
     auto feedback_cb = [this](const robot_msgs::deliveryFeedbackConstPtr& feedback) {
-        task_status_ = feedback->status; // 更新任务状态
+        task_process_ = feedback->status; // 更新任务状态
     };
 
     delivery_ac_->sendGoal(goal, 
@@ -210,7 +211,13 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
 
     delivery_ac_->waitForResult();
     if (delivery_ac_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-        ROS_INFO("Delivery succeeded!");
+        const robot_msgs::deliveryResultConstPtr& result = delivery_ac_->getResult();
+        if (result) {
+            task_status_ = result->info; // 将info赋值给current_task_show_
+            ROS_INFO("Delivery succeeded! info: %s", result->info.c_str());
+        } else {
+            ROS_INFO("Delivery succeeded! But result is null.");
+        }
     } else {
         ROS_WARN("Delivery failed!");
     }
@@ -248,7 +255,6 @@ void TaskManagerNode::taskAssignLoop() {
     std::unique_lock<std::mutex> lock(task_list_mutex_);
     ROS_INFO("start delivery---.");
     while (ros::ok()) { 
-        // 等待有任务或被唤醒
         task_cv_.wait(lock, [this]{ return !task_list_.empty() || !ros::ok(); });
 
         while (!task_list_.empty()) {
@@ -258,7 +264,7 @@ void TaskManagerNode::taskAssignLoop() {
 
             //语音提示
             std_msgs::String speach_msg;
-            speach_msg.data = "2";
+            speach_msg.data = "11";
             speach_client_.publish(speach_msg);
             //打电话
             std_msgs::String calling_msg;
@@ -268,6 +274,7 @@ void TaskManagerNode::taskAssignLoop() {
             // door_open(4);
 
             // 发布任务分配信息
+            task_status_ = "working";
             assignTask(task_list_);
             task_list_.erase(task_list_.begin());
             sendDeliveryGoal(current_task_);
