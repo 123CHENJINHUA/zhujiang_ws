@@ -22,6 +22,9 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     // 服务端
     ui_get_server_ = nh.advertiseService("/UI_get", &TaskManagerNode::uiGetCallback, this);
 
+    // 动作客户端
+    delivery_ac_.reset(new actionlib::SimpleActionClient<robot_msgs::deliveryAction>("delivery_action", true));
+
     ROS_INFO("TaskManagerNode initialized.");
 }
 
@@ -35,7 +38,6 @@ void TaskManagerNode::robot_status_update() {
     odometry_ = 100.0; // 假设里程计为100.0 m
     working_time_ = 3600.0; // 假设工作时间为3600秒
     network_ = "Good"; // 假设网络状态良好
-    task_status_ = 1; // 假设任务状态为1（进行中）
 
     // 用 current_task_ 和 rest_task_ 更新显示内容
     if (!current_task_.empty()) {
@@ -84,7 +86,7 @@ void TaskManagerNode::pub_setup() {
 
 //机器人状态发布实现
 void TaskManagerNode::publishUiShowLoop() {
-    ros::Rate rate(1); // 1Hz
+    ros::Rate rate(10); // 1Hz
     while (ros::ok()) {
 
         // 更新机器人状态
@@ -171,10 +173,47 @@ bool TaskManagerNode::uiGetCallback(robot_msgs::ui_get::Request& req, robot_msgs
         }
     }
 
+    sortTaskList(); // 对任务列表进行排序
+
     task_cv_.notify_one(); // 唤醒分配线程
     res.received = true;
     ROS_INFO("Task list updated, size: %lu", task_list_.size());
     return true;
+}
+
+// 动作客户端调用实现
+
+void TaskManagerNode::action_client_setup() {
+    // 等待动作服务器连接
+    if (!delivery_ac_->waitForServer(ros::Duration(5.0))) {
+        ROS_ERROR("Failed to connect to navigation action server.");
+        return;
+    }
+    ROS_INFO("Connected to navigation action server.");
+}
+
+void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
+    robot_msgs::deliveryGoal goal;
+    goal.building = task[0];
+    goal.unit = task[1];
+    goal.floor = task[2];
+    goal.room = task[3];
+
+    auto feedback_cb = [this](const robot_msgs::deliveryFeedbackConstPtr& feedback) {
+        task_status_ = feedback->status; // 更新任务状态
+    };
+
+    delivery_ac_->sendGoal(goal, 
+        actionlib::SimpleActionClient<robot_msgs::deliveryAction>::SimpleDoneCallback(),
+        actionlib::SimpleActionClient<robot_msgs::deliveryAction>::SimpleActiveCallback(),
+        feedback_cb);
+
+    delivery_ac_->waitForResult();
+    if (delivery_ac_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+        ROS_INFO("Delivery succeeded!");
+    } else {
+        ROS_WARN("Delivery failed!");
+    }
 }
 
 // 任务分配设置
@@ -198,6 +237,13 @@ void TaskManagerNode::assignTask(const std::vector<std::vector<int>>& tasks) {
     }
 }
 
+void TaskManagerNode::sortTaskList() {
+    std::sort(task_list_.begin(), task_list_.end(),
+        [](const std::vector<int>& a, const std::vector<int>& b) {
+            return a < b; // 按字典序升序
+        });
+}
+
 void TaskManagerNode::taskAssignLoop() {
     std::unique_lock<std::mutex> lock(task_list_mutex_);
     ROS_INFO("start delivery---.");
@@ -207,8 +253,8 @@ void TaskManagerNode::taskAssignLoop() {
 
         while (!task_list_.empty()) {
 
-            ros::Duration(1.0).sleep(); // 处理间隔
-            door_ir_control("on");
+            // ros::Duration(1.0).sleep(); // 处理间隔
+            // door_ir_control("on");
 
             //语音提示
             std_msgs::String speach_msg;
@@ -219,16 +265,14 @@ void TaskManagerNode::taskAssignLoop() {
             calling_msg.data = "1楼 1单元 1号";
             calling_client_.publish(calling_msg);
 
-            door_open(4);
+            // door_open(4);
 
             // 发布任务分配信息
             assignTask(task_list_);
             task_list_.erase(task_list_.begin());
-            lock.unlock();
-            ros::Duration(5.0).sleep(); // 处理间隔
-            lock.lock();
+            sendDeliveryGoal(current_task_);
 
-            door_ir_control("off");
+            // door_ir_control("off");
         }
     }
 }
@@ -243,10 +287,9 @@ int main(int argc, char** argv) {
     // 发布者设置
     node.pub_setup();
     // 客户端设置
-    node.client_setup();
-
-    // 等待动作客户端连接
-    // node.navigation_to_pose_ac_.waitForServer();
+    // node.client_setup();
+    // 动作客户端设置
+    node.action_client_setup();
     // 启动工作流
     node.taskAssign_setup();
     // 启动ROS事件循环

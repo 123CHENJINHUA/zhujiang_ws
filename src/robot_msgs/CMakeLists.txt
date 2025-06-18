@@ -7,6 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  actionlib_msgs
+  actionlib
   message_generation
 )
 
@@ -21,8 +23,14 @@ add_service_files(
   ui_get.srv
 )
 
+add_action_files(
+  FILES
+  delivery.action
+)
+
 generate_messages(
   DEPENDENCIES
+  actionlib_msgs
   std_msgs
 )
 

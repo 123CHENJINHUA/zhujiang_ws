@@ -10,12 +10,18 @@
 #include "robot_msgs/ui_show.h"
 #include "robot_msgs/ui_get.h"
 
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/server/simple_action_server.h>
+#include "robot_msgs/deliveryAction.h" 
+
 #include <vector>
 #include <string>
 #include <sstream>
 
 #include <thread>
 #include <condition_variable>
+
+#include <algorithm>
 
 // 根据实际消息类型和服务类型包含头文件
 
@@ -30,6 +36,7 @@ private:
 
     void assignTask(const std::vector<std::vector<int>>& tasks);
     void taskAssignLoop();
+    void sortTaskList();
     std::mutex task_list_mutex_; 
     std::condition_variable task_cv_;
 
@@ -72,11 +79,14 @@ private:
     // 服务端
     ros::ServiceServer ui_get_server_;
 
-    // // 动作客户端
-    // actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> navigation_to_pose_ac_;
+    // 动作客户端
+    std::shared_ptr<actionlib::SimpleActionClient<robot_msgs::deliveryAction>> delivery_ac_;
 
-    // 客户端调用函数
+    // 服务通信客户端调用函数
     bool deliveryCmd(robot_msgs::delivery& req);
+
+    // 动作客户端调用函数
+    void sendDeliveryGoal(const std::vector<int>& task);
 
     // 回调函数声明
     void tracerStatusCallback(const std_msgs::String::ConstPtr& msg);
@@ -91,6 +101,7 @@ TaskManagerNode(ros::NodeHandle& nh);
 
 void pub_setup();
 void client_setup();
+void action_client_setup();
 void taskAssign_setup();
     
 };
