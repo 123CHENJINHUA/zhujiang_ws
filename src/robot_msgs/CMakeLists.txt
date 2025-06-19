@@ -21,6 +21,7 @@ add_service_files(
   FILES
   delivery.srv
   ui_get.srv
+  pick.srv
 )
 
 add_action_files(

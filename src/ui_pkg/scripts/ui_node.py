@@ -8,17 +8,20 @@ import rospy
 from std_msgs.msg import String
 import threading
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QMessageBox
 from PyQt5.QtCore import QObject, pyqtSignal
 from UI.zhujiang_ui import *
+from UI.tanchuang import *
 
 
 from playsound import playsound
 from robot_msgs.msg import ui_show
 from robot_msgs.srv import ui_get, ui_getRequest, ui_getResponse
+from robot_msgs.srv import pick, pickResponse
 
 class UiNode(QObject):
     signal_recv_msg = pyqtSignal(str)  # Qt信号
+    signal_show_tanchuang = pyqtSignal(str)  # 用于显示弹窗的信号
 
     def __init__(self):
         super(UiNode, self).__init__()
@@ -31,7 +34,13 @@ class UiNode(QObject):
         # ui客户端
         self.ui_get_client = rospy.ServiceProxy('/UI_get', ui_get)
 
+        # pickup 服务端
+        self.pickup_service = rospy.Service('/pickup', pick, self.handle_pickup)
+
+        self.pickup_result = None  # 用于存储取件码结果
+
         self.voice_msgs_path = "/home/cjh/zhujiang_ws/src/ui_pkg/voice_msgs"
+
 
     # 订阅
     def ui_show_callback(self, msg):
@@ -39,7 +48,6 @@ class UiNode(QObject):
         self.signal_recv_msg.emit(f"network: {msg.network}\nodometry: {msg.odometry}\nspeed: {msg.speed}\nworking_time: {msg.working_time}\nbattery: {msg.battery}\ntask_process: {msg.task_process}\ntask_status: {msg.task_status}\ncurrent_task: {msg.current_task}\nrest_task: {msg.rest_task} ")  # 发射任务状态信号
 
     def speach_callback(self, msg):
-        rospy.loginfo("Speach: %s", msg.data)
         wav_path = f'{self.voice_msgs_path}/{msg.data}.wav'
         playsound(wav_path)
 
@@ -60,6 +68,20 @@ class UiNode(QObject):
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
             return None
+        
+    def handle_pickup(self, req):
+        rospy.loginfo("Received pickup request: %d", req.pickup_code)
+        self.pickup_result = None  # 每次请求前重置
+        self.signal_show_tanchuang.emit(str(req.pickup_code))  # 发射信号显示弹窗
+        resp = pickResponse()
+
+        # 等待用户输入，直到 self.pickup_result 被设置
+        while self.pickup_result is None and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+
+        resp.success = self.pickup_result if self.pickup_result is not None else False
+        return resp
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, comm_node):
@@ -67,6 +89,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.comm_node = comm_node
         self.comm_node.signal_recv_msg.connect(self.set_recv_msgs)
+        self.comm_node.signal_show_tanchuang.connect(self.show_tanchuang_dialog)
 
         self.delivery_list = []
         self.delivery_list_show = []
@@ -106,6 +129,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if 'task_status' in msg_dict:
             self.label_13.setText("任务状态：\n" + msg_dict['task_status'])
 
+    def show_tanchuang_dialog(self, pickup_code_str):
+        dialog = Tanchuang(self, pickup_code_str,self.comm_node)
+        dialog.exec_()
 
     def on_settings_button_click(self):
         self.manual_editing = True  # 开始手动编辑
@@ -143,6 +169,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_8.setText("\n".join(self.delivery_list_show))
         else:
             self.label_8.setText("配送列表为空")
+
+class Tanchuang(QDialog, Ui_Dialog):
+    def __init__(self, parent=None, pickup_code_str=None, comm_node=None):
+        super(Tanchuang, self).__init__(parent)
+        self.setupUi(self)
+        self.pickup_code_str = pickup_code_str
+        self.comm_node = comm_node
+        self.label.setText("请输入取件码")
+        self.attempts = 0  # 输入次数
+        self.max_attempts = 5
+        self.pushButton.clicked.connect(self.check_code)
+        self.pushButton_2.clicked.connect(self.reject)  # 取消按钮
+
+    def get_input_code(self):
+        num = self.textEdit.toPlainText().strip()
+        return num
+
+    def check_code(self):
+        input_code = self.get_input_code()
+        if input_code == self.pickup_code_str:
+            self.comm_node.pickup_result = True
+            self.accept()  # 关闭窗口
+        else:
+            self.attempts += 1
+            if self.attempts >= self.max_attempts:
+                self.label.setText("输入错误次数过多，已取消")
+                self.comm_node.pickup_result = False
+                self.accept()  # 关闭窗口
+            else:
+                self.label.setText(f"输入错误，请重试（剩余{self.max_attempts - self.attempts}次）")
+    def reject(self):
+        self.comm_node.pickup_result = False
+        super(Tanchuang, self).reject()  # 关闭窗口
+
 
 # 在单独线程中运行rospy.spin
 def ros_spin():

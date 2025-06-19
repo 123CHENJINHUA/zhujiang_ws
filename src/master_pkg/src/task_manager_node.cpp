@@ -17,6 +17,7 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
 
     // 服务客户端
     delivery_cmd_client_ = nh.serviceClient<robot_msgs::delivery>("/delivery_cmd");
+    pickup_client_ = nh.serviceClient<robot_msgs::pick>("/pickup");
 
 
     // 服务端
@@ -111,6 +112,7 @@ void TaskManagerNode::publishUiShowLoop() {
 void TaskManagerNode::client_setup() {
     // 等待所有服务准备就绪
     ros::service::waitForService("/delivery_cmd");
+    ros::service::waitForService("/pickup");
     ROS_INFO("All services are ready and action client is connected.");
 }
 
@@ -215,6 +217,25 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
         if (result) {
             task_status_ = result->info; // 将info赋值给current_task_show_
             ROS_INFO("Delivery succeeded! info: %s", result->info.c_str());
+            // 新增：如果完成，调用pickup服务
+            if (result->info == "Finish") {
+                robot_msgs::pick srv;
+                srv.request.pickup_code = pickup_code_;
+                //语音提示
+                robot_voice(7); // 7是语音提示取件码
+                ROS_INFO("Waiting for pickup code input from UI...");
+                if (pickup_client_.call(srv)) {
+                    if (srv.response.success) {
+                        robot_voice(12); // 12是语音提示取件成功
+                        ROS_INFO("Pickup code correct, pickup success!");
+                    } else {
+                        robot_voice(13); // 13是语音提示取件失败
+                        ROS_WARN("Pickup code failed 5 times or incorrect.");
+                    }
+                } else {
+                    ROS_ERROR("Failed to call pickup service!");
+                }
+            }
         } else {
             ROS_INFO("Delivery succeeded! But result is null.");
         }
@@ -261,15 +282,12 @@ void TaskManagerNode::taskAssignLoop() {
 
             // ros::Duration(1.0).sleep(); // 处理间隔
             // door_ir_control("on");
-
+            // 生成新的取件码
+            pickup_code_generation();
             //语音提示
-            std_msgs::String speach_msg;
-            speach_msg.data = "11";
-            speach_client_.publish(speach_msg);
+            robot_voice(2); // 1是语音提示
             //打电话
-            std_msgs::String calling_msg;
-            calling_msg.data = "1楼 1单元 1号";
-            calling_client_.publish(calling_msg);
+            robot_calling("验证码为" + std::to_string(pickup_code_));
 
             // door_open(4);
 
@@ -282,6 +300,29 @@ void TaskManagerNode::taskAssignLoop() {
             // door_ir_control("off");
         }
     }
+}
+
+// 功能模块
+void TaskManagerNode::robot_voice(int num) {
+    std_msgs::String msg;
+    msg.data = std::to_string(num);
+    speach_client_.publish(msg);
+    ROS_INFO("Robot voice command sent: %s", msg.data.c_str());
+}
+
+void TaskManagerNode::robot_calling(const std::string& msg) {
+    std_msgs::String calling_msg;
+    calling_msg.data = msg;
+    calling_client_.publish(calling_msg);
+    ROS_INFO("Robot calling command sent: %s", msg.c_str());
+}
+
+void TaskManagerNode::pickup_code_generation() {
+    // 每次分配任务前生成新的随机取件码（如4位数字）
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(1000, 9999);
+    pickup_code_ = dis(gen);
 }
 
 

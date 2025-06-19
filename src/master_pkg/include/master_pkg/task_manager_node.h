@@ -6,17 +6,19 @@
 #include <geometry_msgs/Twist.h>
 #include <actionlib/client/simple_action_client.h>
 #include <move_base_msgs/MoveBaseAction.h>
+
 #include "robot_msgs/delivery.h"
 #include "robot_msgs/ui_show.h"
 #include "robot_msgs/ui_get.h"
-
+#include "robot_msgs/pick.h"
+#include "robot_msgs/deliveryAction.h" 
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
-#include "robot_msgs/deliveryAction.h" 
 
 #include <vector>
 #include <string>
 #include <sstream>
+#include <random>
 
 #include <thread>
 #include <condition_variable>
@@ -40,6 +42,10 @@ private:
     std::mutex task_list_mutex_; 
     std::condition_variable task_cv_;
 
+    // 验证码
+    ros::ServiceClient pickup_client_; // 新增pickup服务客户端
+    int pickup_code_ = 1234; // 假设取件码
+
     //机器人状态
     int battery_ = 0; // 电池电量
     int speed_ = 0; // 速度
@@ -52,6 +58,11 @@ private:
     std::vector<std::string> rest_task_show_; // 剩余任务（数组）
 
     void robot_status_update();
+
+    // 功能函数
+    void robot_voice(int num);
+    void robot_calling(const std::string& msg);
+    void pickup_code_generation();
 
     // 发布者
     ros::Publisher tracer_light_pub_;
