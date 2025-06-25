@@ -123,7 +123,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.update_delivery_list_label()
             self.delivery_list_show.clear()  # 清空显示列表
         if 'network' in msg_dict:
-            self.label_11.setText("网络状态：\n" + msg_dict['network'])
+            self.label_11.setText("网络状态：" + msg_dict['network'] + "\n电量：" + msg_dict['battery'] + f"\n速度：{float(msg_dict['speed']):.2f} km/h" + "\n总行驶距离：" + msg_dict['odometry'] + "\n工作时间：" + msg_dict['working_time'])
         if 'task_process' in msg_dict:
             self.label_12.setText("进度：\n" + msg_dict['task_process'] + "%")
         if 'task_status' in msg_dict:

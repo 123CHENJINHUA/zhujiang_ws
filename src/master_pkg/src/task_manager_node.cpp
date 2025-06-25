@@ -4,7 +4,7 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     // : navigation_to_pose_ac_("/navigation_to_pose", true) // 动作客户端初始化
 {
     // 发布者
-    tracer_light_pub_ = nh.advertise<std_msgs::String>("/tracer_light_control", 10);
+    tracer_light_pub_ = nh.advertise<tracer_msgs::TracerLightCmd>("/tracer_light_control", 10);
     speed_pub_ = nh.advertise<geometry_msgs::Twist>("/speed", 10);
     emergency_stop_pub_ = nh.advertise<std_msgs::Bool>("/emergency_stop", 10);
     ui_show_pub_ = nh.advertise<robot_msgs::ui_show>("/UI_show", 10);
@@ -34,9 +34,6 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
 // 机器人状态更新函数
 void TaskManagerNode::robot_status_update() {
 
-    battery_ = 80; // 假设电池电量为80%
-    speed_ = 5; // 假设速度为5 m/s
-    odometry_ = 100.0; // 假设里程计为100.0 m
     working_time_ = 3600.0; // 假设工作时间为3600秒
     network_ = "Good"; // 假设网络状态良好
 
@@ -61,8 +58,10 @@ void TaskManagerNode::robot_status_update() {
 }
 
 // 话题订阅实现
-void TaskManagerNode::tracerStatusCallback(const std_msgs::String::ConstPtr& msg) {
-    ROS_INFO("Received tracer status: %s", msg->data.c_str());
+void TaskManagerNode::tracerStatusCallback(const tracer_msgs::TracerStatus::ConstPtr& msg) {
+    battery_ = (msg->battery_voltage-22.5)/(26.5-22.5) * 100; // 电池电压范围为22.5V到26.5V
+    speed_ = msg->linear_velocity*3.6;
+    odometry_ = (msg->left_odomter + msg->right_odomter) / 2.0; // 里程计取平均值
 }
 
 void TaskManagerNode::navigationStatusCallback(const std_msgs::String::ConstPtr& msg) {
@@ -229,7 +228,7 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
                         robot_voice(12); // 12是语音提示取件成功
                         ROS_INFO("Pickup code correct, pickup success!");
                     } else {
-                        robot_voice(13); // 13是语音提示取件失败
+                        robot_voice(15); // 13是语音提示取件失败
                         ROS_WARN("Pickup code failed 5 times or incorrect.");
                     }
                 } else {
@@ -277,6 +276,7 @@ void TaskManagerNode::taskAssignLoop() {
     ROS_INFO("start delivery---.");
     while (ros::ok()) { 
         task_cv_.wait(lock, [this]{ return !task_list_.empty() || !ros::ok(); });
+        robot_voice(14); // 14是语音提示，配送开始
 
         while (!task_list_.empty()) {
 
@@ -285,7 +285,7 @@ void TaskManagerNode::taskAssignLoop() {
             // 生成新的取件码
             pickup_code_generation();
             //语音提示
-            robot_voice(2); // 1是语音提示
+            robot_voice(3); // 3 机器人正在通过
             //打电话
             robot_calling("验证码为" + std::to_string(pickup_code_));
 

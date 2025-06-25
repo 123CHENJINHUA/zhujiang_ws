@@ -10,6 +10,8 @@
         "/home/cjh/zhujiang_ws/src/master_pkg/include/**",
         "/home/cjh/zhujiang_ws/src/ui_pkg/include/**",
         "/home/cjh/zhujiang_ws/devel/include/**",
+        "/home/cjh/zhujiang_ws/src/tracer_ros/tracer_base/include/**",
+        "/home/cjh/zhujiang_ws/src/ugv_sdk/include/**",
         "/usr/include/**"
       ],
       "name": "ROS",

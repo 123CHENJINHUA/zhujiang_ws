@@ -15,6 +15,9 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
 
+#include "tracer_msgs/TracerStatus.h"
+#include "tracer_msgs/TracerLightCmd.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -47,8 +50,9 @@ private:
     int pickup_code_ = 1234; // 假设取件码
 
     //机器人状态
+
     int battery_ = 0; // 电池电量
-    int speed_ = 0; // 速度
+    float speed_ = 0; // 速度
     double odometry_ = 0.0; // 里程计
     double working_time_ = 0.0; // 工作时间
     std::string network_ = "Good"; // 网络状态
@@ -101,7 +105,7 @@ private:
     void sendDeliveryGoal(const std::vector<int>& task);
 
     // 回调函数声明
-    void tracerStatusCallback(const std_msgs::String::ConstPtr& msg);
+    void tracerStatusCallback(const tracer_msgs::TracerStatus::ConstPtr& msg);
     void navigationStatusCallback(const std_msgs::String::ConstPtr& msg);
 
     bool uiGetCallback(robot_msgs::ui_get::Request& req, robot_msgs::ui_get::Response& res);
