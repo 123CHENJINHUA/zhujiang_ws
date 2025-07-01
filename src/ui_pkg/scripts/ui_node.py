@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QMessageBox
 from PyQt5.QtCore import QObject, pyqtSignal
 from UI.zhujiang_ui import *
 from UI.tanchuang import *
+from UI.my_virtual_keyboard import VirtualKeyboard
 
 
 from playsound import playsound
@@ -99,6 +100,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton.clicked.connect(self.on_delivery_button_click)
         self.pushButton_2.clicked.connect(self.on_settings_button_click)
 
+        # 只在点击文本框时弹出虚拟键盘
+        self.textEdit_1.mousePressEvent = self.make_virtual_keyboard_handler(self.textEdit_1)
+        self.textEdit_2.mousePressEvent = self.make_virtual_keyboard_handler(self.textEdit_2)
+        self.textEdit_3.mousePressEvent = self.make_virtual_keyboard_handler(self.textEdit_3)
+        self.textEdit_4.mousePressEvent = self.make_virtual_keyboard_handler(self.textEdit_4)
+
+        # 初始化时不聚焦任何文本框，聚焦到主窗口
+        self.setFocus()
+
+    def make_virtual_keyboard_handler(self, edit_widget):
+        def handler(event):
+            vk = VirtualKeyboard(self)
+            # 兼容 QLineEdit 和 QTextEdit
+            if hasattr(edit_widget, "toPlainText"):
+                old_text = edit_widget.toPlainText()
+                text = vk.get_input(old_text)
+                if text is not None:
+                    edit_widget.setPlainText(text)
+            else:
+                old_text = edit_widget.text()
+                text = vk.get_input(old_text)
+                if text is not None:
+                    edit_widget.setText(text)
+        return handler
+
     def set_recv_msgs(self, msg):
         # 将多行字符串按行分割
         lines = msg.strip().split('\n')
@@ -181,6 +207,15 @@ class Tanchuang(QDialog, Ui_Dialog):
         self.max_attempts = 5
         self.pushButton.clicked.connect(self.check_code)
         self.pushButton_2.clicked.connect(self.reject)  # 取消按钮
+
+        # 只在点击textEdit时弹出虚拟键盘
+        self.textEdit.mousePressEvent = self.show_virtual_keyboard
+
+    def show_virtual_keyboard(self, event):
+        vk = VirtualKeyboard(self)
+        text = vk.get_input(self.textEdit.toPlainText())
+        if text is not None:
+            self.textEdit.setText(text)
 
     def get_input_code(self):
         num = self.textEdit.toPlainText().strip()
