@@ -15,7 +15,7 @@ from UI.tanchuang import *
 from UI.my_virtual_keyboard import VirtualKeyboard
 
 
-from playsound import playsound
+from playsound3 import playsound
 from robot_msgs.msg import ui_show
 from robot_msgs.srv import ui_get, ui_getRequest, ui_getResponse
 from robot_msgs.srv import pick, pickResponse
@@ -42,6 +42,10 @@ class UiNode(QObject):
 
         self.voice_msgs_path = "/home/cjh/zhujiang_ws/src/ui_pkg/voice_msgs"
 
+        self.sound = playsound(f'{self.voice_msgs_path}/{99}.wav', block=False)
+
+        self.is_music = False  # 用于判断是否正在播放音乐
+
 
     # 订阅
     def ui_show_callback(self, msg):
@@ -50,7 +54,16 @@ class UiNode(QObject):
 
     def speach_callback(self, msg):
         wav_path = f'{self.voice_msgs_path}/{msg.data}.wav'
-        playsound(wav_path)
+        rospy.loginfo("Received speech message: %s", msg.data)
+        if msg.data == '100':
+            self.sound = playsound(wav_path, block=False)  # 播放语音消息
+            self.is_music = True  # 设置正在播放音乐状态
+        else:
+            if self.is_music:
+                self.sound.stop()  # 停止当前音乐
+                self.is_music = False  # 重置音乐状态
+            playsound(wav_path, block=True)  # 播放语音消息
+
 
     def calling_callback(self, msg):
         rospy.loginfo("data: %s", msg.data)
@@ -109,9 +122,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 初始化时不聚焦任何文本框，聚焦到主窗口
         self.setFocus()
 
+        # 设置窗口为全屏显示
+        self.showFullScreen()
+
     def make_virtual_keyboard_handler(self, edit_widget):
         def handler(event):
             vk = VirtualKeyboard(self)
+            vk.resize(800, 400)  # Set the virtual keyboard size (width x height)
+            screen_geometry = QApplication.desktop().screenGeometry()
+            vk.move(screen_geometry.width() - vk.width() - 50, (screen_geometry.height() - vk.height()) // 2)  # Position at center-right
+            vk.show()
             # 兼容 QLineEdit 和 QTextEdit
             if hasattr(edit_widget, "toPlainText"):
                 old_text = edit_widget.toPlainText()
@@ -124,6 +144,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if text is not None:
                     edit_widget.setText(text)
         return handler
+
 
     def set_recv_msgs(self, msg):
         # 将多行字符串按行分割
@@ -213,6 +234,10 @@ class Tanchuang(QDialog, Ui_Dialog):
 
     def show_virtual_keyboard(self, event):
         vk = VirtualKeyboard(self)
+        vk.resize(800, 400)  # Set the virtual keyboard size (width x height)
+        screen_geometry = QApplication.desktop().screenGeometry()
+        vk.move(screen_geometry.width() - vk.width() - 50, (screen_geometry.height() - vk.height()) // 2)  # Position at center-right
+        vk.show()
         text = vk.get_input(self.textEdit.toPlainText())
         if text is not None:
             self.textEdit.setText(text)

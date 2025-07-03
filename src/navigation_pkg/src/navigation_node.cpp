@@ -18,30 +18,45 @@ public:
 
         // Initialize room-to-position mapping
         room_positions_ = {
-            {1, {5.0, -1.9}},
-            {2, {11.7, -1.9}}, 
-            {3, {15.0, -1.9}}, 
+            {1, {{5.6, -1.9, 0.0}, {0.0, 0.0, -0.014, 0.99}}}, // Position: x, y, z; Orientation: x, y, z, w
+            {2, {{11.7, -1.9, 0.0}, {0.0, 0.0, -0.014, 0.99}}},
+            {3, {{15.0, -1.9, 0.0}, {0.0, 0.0, -0.014, 0.99}}},
             // Add more room mappings as needed
         };
+
+        init_position_ = {{-0.41, -1.14, 0.0}, {0.0, 0.0, 0.99, 0.030}}; // Default position and orientation
     }
 
     void executeCB(const robot_msgs::deliveryGoalConstPtr& goal)
     {
-        ROS_INFO("Received delivery goal: %dB%dU%dF%dR", goal->building, goal->unit, goal->floor, goal->room);
 
-        // Find the target position for the room
-        auto it = room_positions_.find(goal->room);
-        if (it == room_positions_.end())
+        if (goal->building == 0 && goal->unit == 0 && goal->floor == 0 && goal->room == 0)
         {
-            ROS_ERROR("Room %d not found in mapping!", goal->room);
-            robot_msgs::deliveryResult result;
-            result.success = false;
-            result.info = "Room not found";
-            as_.setAborted(result);
-            return;
+            ROS_INFO("Back to init pose.");
+            target_position = init_position_.first;
+            target_orientation = init_position_.second;
         }
 
-        const auto& target_position = it->second;
+        else
+        {
+            ROS_INFO("Received delivery goal: %dB%dU%dF%dR", goal->building, goal->unit, goal->floor, goal->room);
+
+            // Find the target position for the room
+            auto it = room_positions_.find(goal->room);
+            if (it == room_positions_.end())
+            {
+                ROS_ERROR("Room %d not found in mapping!", goal->room);
+                robot_msgs::deliveryResult result;
+                result.success = false;
+                result.info = "Room not found";
+                as_.setAborted(result);
+                return;
+            }
+    
+            target_position = it->second.first;
+            target_orientation = it->second.second;
+            
+        }
 
         // Wait for move_base action server to be available
         if (!move_base_client_.waitForServer(ros::Duration(5.0)))
@@ -58,12 +73,14 @@ public:
         move_base_msgs::MoveBaseGoal nav_goal;
         nav_goal.target_pose.header.frame_id = "map_2d";
         nav_goal.target_pose.header.stamp = ros::Time::now();
-        nav_goal.target_pose.pose.position.x = target_position.first;
-        nav_goal.target_pose.pose.position.y = target_position.second;
-        nav_goal.target_pose.pose.position.z = 0.99; // Default z position
-        nav_goal.target_pose.pose.orientation.w = 0.04; // Default orientation
+        nav_goal.target_pose.pose.position.x = target_position[0];
+        nav_goal.target_pose.pose.position.y = target_position[1];
+        nav_goal.target_pose.pose.position.z = target_position[2];
+        nav_goal.target_pose.pose.orientation.x = target_orientation[0];
+        nav_goal.target_pose.pose.orientation.y = target_orientation[1];
+        nav_goal.target_pose.pose.orientation.z = target_orientation[2];
+        nav_goal.target_pose.pose.orientation.w = target_orientation[3];
 
-        ROS_INFO("Sending navigation goal to room %d at position (%.2f, %.2f)", goal->room, target_position.first, target_position.second);
         move_base_client_.sendGoal(nav_goal);
 
         // Publish constant feedback
@@ -111,7 +128,11 @@ public:
 private:
     actionlib::SimpleActionServer<robot_msgs::deliveryAction> as_;
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> move_base_client_;
-    std::map<int, std::pair<double, double>> room_positions_; // Room-to-position mapping
+    std::map<int, std::pair<std::vector<double>, std::vector<double>>> room_positions_; // Room-to-position mapping
+    std::pair<std::vector<double>, std::vector<double>> init_position_; // Initial position and orientation
+    std::vector<double> target_position;
+    std::vector<double> target_orientation;
+
 };
 
 int main(int argc, char** argv)

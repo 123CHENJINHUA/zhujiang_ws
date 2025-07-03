@@ -210,6 +210,8 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
         actionlib::SimpleActionClient<robot_msgs::deliveryAction>::SimpleActiveCallback(),
         feedback_cb);
 
+    robot_voice(100); // 100对应播放歌曲的指令，行驶过程中播放歌曲
+
     delivery_ac_->waitForResult();
     if (delivery_ac_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
         const robot_msgs::deliveryResultConstPtr& result = delivery_ac_->getResult();
@@ -234,6 +236,43 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
                 } else {
                     ROS_ERROR("Failed to call pickup service!");
                 }
+            }
+        } else {
+            ROS_INFO("Delivery succeeded! But result is null.");
+        }
+    } else {
+        ROS_WARN("Delivery failed!");
+    }
+}
+
+
+void TaskManagerNode::sendGoBackGoal(const std::vector<int>& task){
+    robot_msgs::deliveryGoal goal;
+    goal.building = task[0];
+    goal.unit = task[1];
+    goal.floor = task[2];
+    goal.room = task[3];
+
+    auto feedback_cb = [this](const robot_msgs::deliveryFeedbackConstPtr& feedback) {
+        task_process_ = feedback->status; // 更新任务状态
+    };
+
+    delivery_ac_->sendGoal(goal, 
+        actionlib::SimpleActionClient<robot_msgs::deliveryAction>::SimpleDoneCallback(),
+        actionlib::SimpleActionClient<robot_msgs::deliveryAction>::SimpleActiveCallback(),
+        feedback_cb);
+
+    robot_voice(100); // 100对应播放歌曲的指令，行驶过程中播放歌曲
+
+    delivery_ac_->waitForResult();
+    if (delivery_ac_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+        const robot_msgs::deliveryResultConstPtr& result = delivery_ac_->getResult();
+        if (result) {
+            task_status_ = result->info; // 将info赋值给current_task_show_
+            ROS_INFO("Delivery succeeded! info: %s", result->info.c_str());
+            // 新增：如果完成，调用pickup服务
+            if (result->info == "Finish") {
+                robot_voice(17); // 17是我回来啦
             }
         } else {
             ROS_INFO("Delivery succeeded! But result is null.");
@@ -299,6 +338,13 @@ void TaskManagerNode::taskAssignLoop() {
 
             // door_ir_control("off");
         }
+
+         // All tasks completed, return to original point
+         ROS_INFO("All tasks completed. Returning to original point...");
+         robot_voice(16); // 16是语音提示，返回原点
+         std::vector<int> original_point = {0, 0, 0, 0}; // Define the original point
+         sendGoBackGoal(original_point);
+         task_status_ = "idle"; // Update status to idle
     }
 }
 

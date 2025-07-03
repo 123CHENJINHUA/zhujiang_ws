@@ -103,6 +103,7 @@ private:
 
     // 动作客户端调用函数
     void sendDeliveryGoal(const std::vector<int>& task);
+    void sendGoBackGoal(const std::vector<int>& task);
 
     // 回调函数声明
     void tracerStatusCallback(const tracer_msgs::TracerStatus::ConstPtr& msg);
