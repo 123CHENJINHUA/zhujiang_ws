@@ -52,7 +52,6 @@ add_message_files(
     TracerLightState.msg
     TracerLightCmd.msg
     TracerStatus.msg
-    TracerRsStatus.msg
     UartTracerStatus.msg
 )
 

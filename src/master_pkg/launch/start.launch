@@ -1,16 +1,6 @@
 <launch>
-    <!-- 先启动底盘相关节点 -->
-    <arg name="port_name" default="can0" />
-    <arg name="simulated_robot" default="false" />
-
-    <node name="tracer_base_node" pkg="tracer_base" type="tracer_base_node" output="screen">
-        <param name="port_name" type="string" value="$(arg port_name)" />
-        <param name="simulated_robot" type="bool" value="$(arg simulated_robot)" />
-
-        <param name="odom_frame" type="string" value="odom" />
-        <param name="base_frame" type="string" value="base_link" />
-
-    </node>
+    <!-- 启动tracer机器人底盘 -->
+    <include file="$(find tracer_bringup)/launch/tracer_robot_base.launch" />
 
     <!-- 再启动主控相关节点 -->
     <node pkg="master_pkg" type="task_manager_node" name="task_manager" output="screen" />
