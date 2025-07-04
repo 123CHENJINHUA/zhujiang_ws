@@ -7,6 +7,7 @@ sys.path.insert(0, "/home/cjh/zhujiang_ws/src")
 import rospy
 from std_msgs.msg import String
 import threading
+import queue
 import time
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QMessageBox
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -40,11 +41,24 @@ class UiNode(QObject):
 
         self.pickup_result = None  # 用于存储取件码结果
 
+        # 音频播放相关
         self.voice_msgs_path = "/home/cjh/zhujiang_ws/src/ui_pkg/voice_msgs"
 
         self.sound = playsound(f'{self.voice_msgs_path}/{99}.wav', block=False)
 
         self.is_music = False  # 用于判断是否正在播放音乐
+
+        # 创建音频播放线程
+        self.audio_thread = threading.Thread(target=self._audio_worker, daemon=True)
+        self.audio_thread.start()
+
+    def _audio_worker(self):
+        while not rospy.is_shutdown():
+            try:
+                if self.is_music and not self.sound.is_alive():  # 检查音频路径是否有效且当前没有音频在播放
+                    self.sound = playsound(f'{self.voice_msgs_path}/{100}.wav', block=False)  # 播放音频
+            except Exception as e:
+                rospy.logerr(f"Audio playback error: {e}")
 
 
     # 订阅
@@ -56,13 +70,13 @@ class UiNode(QObject):
         wav_path = f'{self.voice_msgs_path}/{msg.data}.wav'
         rospy.loginfo("Received speech message: %s", msg.data)
         if msg.data == '100':
-            self.sound = playsound(wav_path, block=False)  # 播放语音消息
             self.is_music = True  # 设置正在播放音乐状态
         else:
             if self.is_music:
                 self.sound.stop()  # 停止当前音乐
                 self.is_music = False  # 重置音乐状态
             playsound(wav_path, block=True)  # 播放语音消息
+            
 
 
     def calling_callback(self, msg):
