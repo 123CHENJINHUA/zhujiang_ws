@@ -81,6 +81,7 @@ public:
         nav_goal.target_pose.pose.orientation.z = target_orientation[2];
         nav_goal.target_pose.pose.orientation.w = target_orientation[3];
 
+        ros::Duration(5).sleep();
         move_base_client_.sendGoal(nav_goal);
 
         // Publish constant feedback

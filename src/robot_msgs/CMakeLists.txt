@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   actionlib_msgs
   actionlib
   message_generation
@@ -15,6 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ui_show.msg
+  Marker.msg
+  MarkerArray.msg
+  Marker2dPose.msg
 )
 
 add_service_files(
@@ -22,6 +26,7 @@ add_service_files(
   delivery.srv
   ui_get.srv
   pick.srv
+  unique_move.srv
 )
 
 add_action_files(
@@ -33,8 +38,9 @@ generate_messages(
   DEPENDENCIES
   actionlib_msgs
   std_msgs
+  geometry_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS std_msgs message_runtime
+  CATKIN_DEPENDS std_msgs geometry_msgs message_runtime
 )
