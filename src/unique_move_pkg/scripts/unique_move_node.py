@@ -14,7 +14,23 @@ import cv2
 import threading
 import math
 from scipy.stats import mode
+from robot_msgs.msg import Marker2dPose
+import time
 
+class PIDController:
+    def __init__(self, kp, ki, kd):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.prev_error = 0
+        self.integral = 0
+
+    def compute(self, target, actual):
+        error = target - actual
+        self.integral += error
+        derivative = error - self.prev_error
+        self.prev_error = error
+        return self.kp * error + self.ki * self.integral + self.kd * derivative
 
 class UniqueMoveNode:
     def __init__(self):
@@ -31,6 +47,16 @@ class UniqueMoveNode:
         self.service = rospy.Service('/unique_move_service', unique_move, self.handle_move_request)
 
         self.car = CarTrajectory(x=0,y=-0.71, theta=0)
+
+        self.IsLocated = False  # 是否定位成功
+        self.marker_pose = None
+        self.body_foot_pose = None
+
+        self.linear_pid = PIDController(kp=0.5, ki=0.00, kd=0.0)  # PID for linear velocity
+        self.angular_pid = PIDController(kp=0.05, ki=0.00, kd=0.0)  # PID for angular velocity
+        self.initial_pose = None  # Store the initial pose
+        self.body_foot_pose = None  # Store the latest /body_foot_2d_pose data
+        rospy.Subscriber('/body_foot_2d_pose', Marker2dPose, self.update_body_foot_pose)
         
 
         # 参数设置
@@ -38,158 +64,228 @@ class UniqueMoveNode:
         self.angular_z = 0.2  # 角速度(rad/s)
         self.distance2wall = None
         self.angle2wall = None
-        self.camera_dis_offset = 0.05
+        self.center2edge_offset = self.car.W / 2.0  # 小车中心到边缘的偏移量
         self.camera_angle_offset = 0
-        self.wall2edge_offset = 0.5
+        self.wall2edge_offset = 0.05
 
-        # 加载相机校准参数
-        calibration_file = "/home/cjh/zhujiang_ws/src/unique_move_pkg/scripts/charuco_camera_calibration.yaml"
-        fs = cv2.FileStorage(calibration_file, cv2.FILE_STORAGE_READ)
-        self.camera_matrix = fs.getNode("camera_matrix").mat()
-        self.dist_coeffs = fs.getNode("dist_coeff").mat()
-        fs.release()
-
-        # 定义 ArUco 字典和检测参数
-        self.mark_size = 0.15  # ArUco 码的大小
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_ARUCO_ORIGINAL)
-        self.parameters = cv2.aruco.DetectorParameters()  # 修复 DetectorParameters_create 问题
-        self.cap = None
-        self.dist_window = []
-        self.angle_window = []
-        self.window_size = 30
+        self.move_history = []  # 记录每步操作 (angle, distance)
 
         rospy.loginfo("Unique Move Service is ready...")
 
-    def data_handling(self, data):
-        """剔除离群点，返回剔除后的数据"""
-        if not data or len(data) == 0:
-            return []
-        result = mode(data)
-        most_common = result.mode
-        # rospy.loginfo(f"Data len: {len(data)} ,Most common value: {most_common}, Count: {result.count}")
-        if result.count < (len(data) / 2):
-            rospy.logwarn(f"Data len: {len(data)} , Count: {result.count}")
-            return []
-        return most_common.item()
-
-
-    def rvec_to_euler(self,rvec):
-        """将旋转向量转换为欧拉角"""
-        rotation_matrix, _ = cv2.Rodrigues(rvec)  # 将旋转向量转换为旋转矩阵
-        sy = math.sqrt(rotation_matrix[0, 0]**2 + rotation_matrix[1, 0]**2)
-        singular = sy < 1e-6
-
-        if not singular:
-            x_angle = math.atan2(rotation_matrix[2, 1], rotation_matrix[2, 2])
-            y_angle = math.atan2(-rotation_matrix[2, 0], sy)
-            z_angle = math.atan2(rotation_matrix[1, 0], rotation_matrix[0, 0])
-        else:
-            x_angle = math.atan2(-rotation_matrix[1, 2], rotation_matrix[1, 1])
-            y_angle = math.atan2(-rotation_matrix[2, 0], sy)
-            z_angle = 0
-
-        return math.degrees(x_angle), math.degrees(y_angle), math.degrees(z_angle)
-
     def detect_to_wall_distance(self):
         """
-        ArUco 位姿检测
+        通过订阅 /marker_2d_pose 和 /body_foot_2d_pose 计算距离和角度
         """
-        # rospy.loginfo("Starting ArUco pose detection...")
-        cap = cv2.VideoCapture("/dev/ttyMyVideo1")
-        if not cap.isOpened():
-            rospy.logerr("Failed to open camera.")
-            return None, None
+        try:
 
-        dist_window = []
-        angle_window = []
+            if not self.IsLocated:
+                # 收集 20 次 /marker_2d_pose 数据
+                marker_poses = []
+                for _ in range(20):
+                    try:
+                        marker_pose = rospy.wait_for_message('/marker_2d_pose', Marker2dPose, timeout=1.0)
+                        marker_poses.append(marker_pose)
+                    except rospy.ROSException as e:
+                        rospy.logwarn(f"Failed to get marker pose: {str(e)}")
+                        continue
+                    rospy.sleep(0.05)  # 小延迟
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                rospy.logerr("Failed to read frame from camera.")
-                continue
-
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            corners, ids, _ = cv2.aruco.detectMarkers(gray, self.aruco_dict, parameters=self.parameters)
-
-            if ids is None or len(ids) == 0:
-                cap.release()
-                rospy.logwarn("No markers detected.")
-                return None, None
-
-            if ids[0][0] == 123:
-                rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, self.mark_size, self.camera_matrix, self.dist_coeffs)
-                dect_distance = abs(tvecs[0][0][2])
-                x_angle, y_angle, z_angle = self.rvec_to_euler(rvecs[0]) 
-                dect_angle = y_angle
-
-                if dect_distance > 3:
-                    continue
-
-                dist_window.append(dect_distance)
-                angle_window.append(dect_angle)
-
-                if len(dist_window) >= self.window_size:
-                    # 剔除离群点
-                    filtered_dist = self.data_handling(dist_window)
-                    filtered_angle = self.data_handling(angle_window)
-                    cap.release()
-                    if filtered_dist and filtered_angle:
-                        return filtered_dist, filtered_angle
-                    rospy.logwarn("No valid distance or angle detected after filtering.")
+                if not marker_poses:
+                    rospy.logwarn("Failed to collect sufficient marker pose data.")
                     return None, None
 
+                # 计算 marker_pose 的平均值
+                avg_x = sum(pose.x for pose in marker_poses) / len(marker_poses)
+                avg_y = sum(pose.y for pose in marker_poses) / len(marker_poses)
+                avg_theta = sum(pose.theta for pose in marker_poses) / len(marker_poses)
 
-    def publish_linear_velocity(self, distance=None):
+                self.marker_pose = Marker2dPose(x=avg_x, y=avg_y, theta=avg_theta)
+                self.IsLocated = True  # 定位成功
+
+            # 获取 /body_foot_2d_pose 的数据
+            self.body_foot_pose = rospy.wait_for_message('/body_foot_2d_pose', Marker2dPose, timeout=1.0)
+
+            if self.marker_pose is None or self.body_foot_pose is None:
+                rospy.logwarn("Marker or body foot pose not received yet.")
+                return None, None
+
+            # 计算 marker_pose 的直线方程 y = kx + b
+            marker_theta_rad = math.radians(self.marker_pose.theta)  # 将角度转换为弧度
+            k = math.tan(marker_theta_rad)  # 斜率
+            b = self.marker_pose.y - k * self.marker_pose.x  # 截距
+
+            # 计算 body_foot_pose 点到直线的垂直距离
+            x0, y0 = self.body_foot_pose.x, self.body_foot_pose.y
+            detect_distance = abs(k * x0 - y0 + b) / math.sqrt(k**2 + 1)
+
+            # 计算夹角
+            marker_theta = math.radians(self.marker_pose.theta)
+            body_foot_theta = math.radians(self.body_foot_pose.theta)
+            detect_angle = math.degrees(marker_theta - body_foot_theta)
+
+            # rospy.loginfo(f"Detected distance: {detect_distance:.2f} m, Detected angle: {detect_angle:.2f}°")
+            return detect_distance, detect_angle
+
+        except rospy.ROSException as e:
+            rospy.logwarn(f"Failed to get pose data: {str(e)}")
+            return None, None
+        
+    def cal_align_distance(self):
         """
-        发布线速度指令
-        :param distance: 前进距离
+        计算小车与定位marker的对齐距离（在marker朝向上的投影）
         """
-        duration_time = abs(distance) / self.linear_x
-        linear_x = (distance / abs(distance)) * self.linear_x
+        if self.marker_pose is None or self.body_foot_pose is None:
+            rospy.logwarn("Marker or body foot pose not received yet.")
+            return None
+
+        # 计算小车中心到marker的向量
+        dx = self.marker_pose.x - self.body_foot_pose.x
+        dy = self.marker_pose.y - self.body_foot_pose.y
+
+        # marker朝向的单位向量
+        theta_rad = math.radians(self.marker_pose.theta)
+        ux = math.cos(theta_rad)
+        uy = math.sin(theta_rad)
+
+        # 投影距离
+        distance_to_marker = dx * ux + dy * uy
+        return distance_to_marker
+
+
+    def update_body_foot_pose(self, msg):
+        """
+        Callback to update the latest /body_foot_2d_pose data.
+        """
+        self.body_foot_pose = msg
+
+    def set_initial_pose(self):
+        """
+        Record the initial pose from /body_foot_2d_pose.
+        """
+        if self.body_foot_pose is None:
+            rospy.logwarn("Body foot pose not received yet.")
+            return False
+        self.initial_pose = self.body_foot_pose
+        return True
+
+    def calculate_actual_distance_and_angle(self):
+        """
+        Calculate the actual distance and angle based on the initial and current pose.
+        """
+        if self.initial_pose is None or self.body_foot_pose is None:
+            rospy.logwarn("Initial or current pose not available.")
+            return None, None
+
+        # Calculate actual distance
+        dx = self.body_foot_pose.x - self.initial_pose.x
+        dy = self.body_foot_pose.y - self.initial_pose.y
+        actual_distance = math.sqrt(dx**2 + dy**2)
+
+        # Calculate actual angle
+        actual_angle = self.body_foot_pose.theta - self.initial_pose.theta
+
+        return actual_distance, actual_angle
+
+    def publish_linear_velocity(self, target_distance):
+        """
+        发布线速度指令，使用PID控制
+        :param target_distance: 目标前进距离
+        """
+        if not self.set_initial_pose():
+            rospy.logwarn("Failed to set initial pose.")
+            return
 
         vel_msg = Twist()
-        vel_msg.linear.x = linear_x
-
         rate = rospy.Rate(20)  # 设置发布频率为20Hz
-        start_time = rospy.Time.now()
 
-        while rospy.Time.now() - start_time < rospy.Duration(duration_time):
+        while True:
+            # Calculate actual distance
+            actual_distance, _ = self.calculate_actual_distance_and_angle()
+            actual_distance = actual_distance * target_distance / abs(target_distance) if target_distance != 0 else 0
+            if actual_distance is None:
+                continue
+
+            # Compute PID output
+            pid_output = self.linear_pid.compute(target_distance, actual_distance)
+            vel_msg.linear.x = max(min(pid_output, self.linear_x), -self.linear_x)  # 限制速度范围
+
             self.vel_pub.publish(vel_msg)
             rate.sleep()
+
+            actual_distance, _ = self.calculate_actual_distance_and_angle()
+            actual_distance = actual_distance * target_distance / abs(target_distance) if target_distance != 0 else 0
+            if actual_distance is None:
+                continue
+
+            # Stop if the error is small enough
+            if abs(target_distance - actual_distance) < 0.01:
+                break
 
         # 停止机器人
         vel_msg.linear.x = 0.0
         self.vel_pub.publish(vel_msg)
-        rospy.sleep(0.5)  # 减速过程
+        rospy.sleep(0.5)
 
-    def publish_angular_velocity(self, angle=None):
+    def publish_angular_velocity(self, target_angle):
         """
-        发布角速度指令
-        :param angle: 旋转角度
+        发布角速度指令，使用PID控制
+        :param target_angle: 目标旋转角度
         """
-        if abs(angle) > (np.pi / 2):
-            angular_z = abs(angle)/angle * self.angular_z
-        else:
-            angular_z = angle / (np.pi / 2) * self.angular_z  # 调整角速度比例   
-
-        angle = angle / 180.0 * np.pi
-        duration_time = abs(angle) / abs(angular_z)
+        if not self.set_initial_pose():
+            rospy.logwarn("Failed to set initial pose.")
+            return
 
         vel_msg = Twist()
-        vel_msg.angular.z = angular_z
-
         rate = rospy.Rate(20)  # 设置发布频率为20Hz
-        start_time = rospy.Time.now()
 
-        while rospy.Time.now() - start_time < rospy.Duration(duration_time):
+        while True:
+            # Calculate actual angle
+            _, actual_angle = self.calculate_actual_distance_and_angle()
+            if actual_angle is None:
+                continue
+
+            # Compute PID output
+            pid_output = self.angular_pid.compute(target_angle, actual_angle)
+            vel_msg.angular.z = max(min(pid_output, self.angular_z), -self.angular_z)  # 限制角速度范围
+
             self.vel_pub.publish(vel_msg)
             rate.sleep()
+
+            _, actual_angle = self.calculate_actual_distance_and_angle()
+            if actual_angle is None:
+                continue
+
+            # Stop if the error is small enough
+            if abs(target_angle - actual_angle) < 0.5:
+                break
 
         # 停止机器人
         vel_msg.angular.z = 0.0
         self.vel_pub.publish(vel_msg)
-        rospy.sleep(0.5)  # 减速过程
+        rospy.sleep(0.5)
+
+    def cal_average_distance_and_angle(self):
+        """
+        计算距离和角度的平均值
+        """
+        distances = []
+        angles = []
+
+        # Collect 10 samples of distance and angle
+        for _ in range(10):
+            distance2wall, angle2wall = self.detect_to_wall_distance()
+            if distance2wall is not None and angle2wall is not None:
+                distances.append(distance2wall)
+                angles.append(angle2wall)
+            rospy.sleep(0.05)
+        if not distances or not angles:
+            rospy.logwarn("Failed to collect sufficient data for averaging.")
+            return None, None
+        # Calculate averages
+        avg_distance2wall = sum(distances) / len(distances)
+        avg_angle2wall = sum(angles) / len(angles)
+        rospy.loginfo(f"Average Distance car_center to wall: {avg_distance2wall:.2f} m, Average Angle car_center to wall: {avg_angle2wall:.2f}°")
+        return avg_distance2wall, avg_angle2wall
         
     
     def handle_move_request(self, req):
@@ -199,21 +295,49 @@ class UniqueMoveNode:
         response = unique_moveResponse()
         if req.order == "move":
             try:
-                last_angle = 0  # 基础旋转角度(度)
                 new_angle = 0    # 每次旋转角度增量(度)
                 move_distance = self.car.D  # 每次前进距离
                 step = 0
-                
+                self.IsLocated = False  # 重置定位状态
+
+                self.move_history.clear()  # 清空历史记录
+
                 while True:
-                    distance2wall, angle2wall = self.detect_to_wall_distance()
-                    if distance2wall is None or angle2wall is None:
+                    
+                    avg_distance2wall, avg_angle2wall = self.cal_average_distance_and_angle()
+                    if avg_distance2wall is None or avg_angle2wall is None:
                         continue  # 如果未检测到有效的距离或角度，跳过当前循环
 
-                    # 更新小车的离墙距离和角度
-                    self.car.d = distance2wall - self.camera_dis_offset - self.wall2edge_offset
-                    self.car.angle2wall = -angle2wall - self.camera_angle_offset
+                    # Update car's distance and angle
+                    self.car.d = avg_distance2wall - self.center2edge_offset - self.wall2edge_offset
+                    self.car.angle2wall = avg_angle2wall - self.camera_angle_offset
 
                     if self.car.d <= self.car.minimum_distance:
+                        # 回正 
+                        current_angle = self.car.angle2wall    
+                        self.car.rotate(current_angle)
+                        self.publish_angular_velocity(current_angle)
+                        self.move_history.append(('rotate', current_angle))
+                        rospy.loginfo(f"Step {step+1}: Rotated {current_angle:.1f}°")
+
+                        # 前进
+                        align_distance = self.cal_align_distance()
+                        if align_distance is None:
+                            rospy.logwarn("Failed to calculate alignment distance.")
+                            continue
+                        self.car.move_forward(align_distance)
+                        self.publish_linear_velocity(align_distance)
+                        rospy.loginfo(f"Step {step+1}: Moved {align_distance:.2f} m")
+                        
+                        avg_distance2wall, avg_angle2wall = self.cal_average_distance_and_angle()
+                        if avg_distance2wall is None or avg_angle2wall is None:
+                            continue  # 如果未检测到有效的距离或角度，跳过当前循环
+
+                        # Update car's distance and angle
+                        self.car.d = avg_distance2wall - self.center2edge_offset - self.wall2edge_offset
+                        self.car.angle2wall = avg_angle2wall - self.camera_angle_offset
+
+                        rospy.loginfo(f"Final Distance to wall: {self.car.d:.2f} m, Angle to wall: {self.car.angle2wall:.2f}°")
                         break
 
                     rospy.loginfo(f"Step {step+1}: Distance to wall: {self.car.d:.2f} m, Angle to wall: {self.car.angle2wall:.2f}°")
@@ -229,43 +353,42 @@ class UniqueMoveNode:
                     else:
                         # 使用第一个有效解作为旋转角度
                         new_angle = valid_solutions[0] * self.car.k * 180 / np.pi
+                        rospy.loginfo(f"Step {step+1}: New angle calculated: {new_angle:.2f}°")
+                        if new_angle > 45:
+                            new_angle = 45
 
                     # 扭正角度
-                    current_angle = self.car.angle2wall
-
-                    # 扭正
-                    self.car.rotate(current_angle)
-                    self.publish_angular_velocity(current_angle)
-                    rospy.loginfo(f"Step {step+1}: Rotated {current_angle:.1f}°, New orientation: {self.car.get_orientation():.1f}°")
+                    correct_angle = self.car.angle2wall
                     
                     #需要旋转的角度
-                    current_angle = new_angle
+                    current_angle = new_angle + correct_angle
 
                     # 旋转
                     self.car.rotate(current_angle)
                     self.publish_angular_velocity(current_angle)
-                    rospy.loginfo(f"Step {step+1}: Rotated {current_angle:.1f}°, New orientation: {self.car.get_orientation():.1f}°")
+                    self.move_history.append(('rotate', current_angle))
+                    rospy.loginfo(f"Step {step+1}: Rotated {current_angle:.1f}°")
                     
                     # 前进
                     self.car.move_forward(move_distance)
                     self.publish_linear_velocity(move_distance)
+                    self.move_history.append(('move', move_distance))
                     rospy.loginfo(f"Step {step+1}: Moved {move_distance} m")
+
+                    current_angle = new_angle
 
                     # 旋转
                     self.car.rotate(-2 * current_angle)
                     self.publish_angular_velocity(-2 * current_angle)
-                    rospy.loginfo(f"Step {step+1}: Rotated {-2 * current_angle:.1f}°, New orientation: {self.car.get_orientation():.1f}°")
+                    self.move_history.append(('rotate', -2 * current_angle))
+                    rospy.loginfo(f"Step {step+1}: Rotated {-2 * current_angle:.1f}°")
                     
                     # 前进
                     self.car.move_forward(-move_distance)
                     self.publish_linear_velocity(-move_distance)
+                    self.move_history.append(('move', -move_distance))
                     rospy.loginfo(f"Step {step+1}: Moved {move_distance} m)")
 
-                    # 回正 
-                    self.car.rotate(current_angle)
-                    self.publish_angular_velocity(current_angle)
-                    rospy.loginfo(f"Step {step+1}: Rotated {current_angle:.1f}°, New orientation: {self.car.get_orientation():.1f}°")
-                
                     step += 1
 
                 response.success = True
@@ -274,6 +397,25 @@ class UniqueMoveNode:
                 response.success = False
                 response.message = str(e)
             
+            return response
+        
+        elif req.order == "out":
+            try:
+                # 反向执行move_history
+                for action, value in reversed(self.move_history):
+                    if action == 'move':
+                        self.car.move_forward(-value)
+                        self.publish_linear_velocity(-value)
+                        rospy.loginfo(f"Out: Move {-value} m")
+                    elif action == 'rotate':
+                        self.car.rotate(-value)
+                        self.publish_angular_velocity(-value)
+                        rospy.loginfo(f"Out: Rotate {-value} deg")
+                response.success = True
+            except Exception as e:
+                rospy.logerr(f"Failed to execute out command: {str(e)}")
+                response.success = False
+                response.message = str(e)
             return response
 
 if __name__ == "__main__":

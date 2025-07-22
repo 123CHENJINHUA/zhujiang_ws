@@ -47,6 +47,7 @@ set(PYTHON_EXECUTABLE /home/cjh/miniconda3/envs/zhujiang/bin/python)
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/unique_move_node.py
+  scripts/test.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -17,12 +17,12 @@ class CarTrajectory:
         self.orientation = [0]  # 初始朝向角度(弧度)
 
         self.D = 0.3  # 小车前进的距离单位
-        self.L = 0.6  # 小车的长度单位
-        self.W = 0.58  # 小车的宽度单位
+        self.L = 0.702  # 小车的长度单位
+        self.W = 0.610  # 小车的宽度单位
         self.d = 0.3  # 离墙距离
-        self.k = 1  # 最大角度比例系数
-        self.minimum_distance = 0.05  # 最小距离
-        self.maximum_distance = 0.7  # 最大距离
+        self.k = 0.9  # 最大角度比例系数
+        self.minimum_distance = 0.07  # 最小距离
+        self.maximum_distance = 1.5  # 最大距离
         self.angle2wall = 0
         
     def rotate(self, angle_degrees):
@@ -81,8 +81,8 @@ class CarTrajectory:
             if 0 <= y <= 1:
                 x = np.sqrt(y)
                 theta = 2 * np.arcsin(x)
-                if 0 <= theta <= np.pi/2:  # 检查 θ 是否在 [0,π] 范围内
-                    valid_solutions.append(theta)
+                if 0 <= theta <= np.pi/2:  # 检查 θ 是否在 [0,π/2] 范围内
+                    valid_solutions.append(theta*self.k)
         
         if not valid_solutions:
             print("无有效解：所有解均不在合理范围内")
@@ -91,67 +91,5 @@ class CarTrajectory:
         return valid_solutions
 
 
-def simulate_car_movement():
-    """
-    模拟小车运动：旋转-前进循环
-    旋转角度公式：base_angle + increment * step_count
-    """
-    car = CarTrajectory(x=0,y=-0.7, theta=0)  # 初始化小车位置和朝向
-    
-    # 参数设置
-    last_angle = 0  # 基础旋转角度(度)
-    new_angle = 0    # 每次旋转角度增量(度)
-    move_distance = car.D  # 每次前进距离
-    step = 0
-
-    x, y = car.get_position()
-    car.d = abs(abs(y)-car.W/2)  # 计算离墙距离
-    
-    
-    while(car.d > car.minimum_distance):
-
-
-        # 调用 solve_theta 方法并获取返回值
-        valid_solutions = car.solve_theta()
-        if not valid_solutions:
-            print("无有效解，停止运动")
-            new_angle = 45
-        else:
-            # 使用第一个有效解作为旋转角度
-            new_angle = valid_solutions[0]* car.k * 180 / np.pi
-
-        # 计算当前旋转角度
-        current_angle = last_angle + new_angle
-        
-        # 旋转
-        car.rotate(current_angle)
-        print(f"Step {step+1}: Rotated {current_angle:.1f}°, New orientation: {car.get_orientation():.1f}°")
-        
-        # 前进
-        car.move_forward(move_distance)
-        x, y = car.get_position()
-        print(f"Step {step+1}: Moved {move_distance} units, New position: ({x:.2f}, {y:.2f})")
-
-        current_angle = new_angle
-
-        # 旋转
-        car.rotate(-2*current_angle)
-        print(f"Step {step+1}: Rotated {current_angle:.1f}°, New orientation: {car.get_orientation():.1f}°")
-        
-        # 前进
-        car.move_forward(-move_distance)
-        x, y = car.get_position()
-        print(f"Step {step+1}: Moved {move_distance} units, New position: ({x:.2f}, {y:.2f})")
-
-        last_angle = current_angle
-
-        x, y = car.get_position()
-        car.d = abs(abs(y)-car.W/2)
-    
-        step += 1
-
-    #回正 
-    car.rotate(current_angle)
-
 if __name__ == "__main__":
-    simulate_car_movement()
+    car = CarTrajectory(x=0,y=-0.7, theta=0)

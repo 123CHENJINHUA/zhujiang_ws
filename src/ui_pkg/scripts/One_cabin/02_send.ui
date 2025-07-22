@@ -1,0 +1,1532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1208</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1208</width>
+    <height>800</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1208</width>
+    <height>800</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>1191</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="8">
+     <spacer name="horizontalSpacer_11">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>13</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="5">
+     <widget class="QLabel" name="lblwifi">
+      <property name="minimumSize">
+       <size>
+        <width>15</width>
+        <height>12</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>15</width>
+        <height>12</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="resources.qrc">:/icons/icons/wifi_full.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="lblTime">
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+        <pointsize>8</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>17:04</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="6">
+     <spacer name="horizontalSpacer_9">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>13</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="4">
+     <spacer name="horizontalSpacer_5">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>13</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="lblLogo">
+      <property name="minimumSize">
+       <size>
+        <width>230</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>230</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="resources.qrc">:/icons/icons/Logo.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="9">
+     <widget class="QLabel" name="lblBattery">
+      <property name="minimumSize">
+       <size>
+        <width>24</width>
+        <height>12</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>24</width>
+        <height>12</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="resources.qrc">:/icons/icons/battery_full.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <spacer name="horizontalSpacer_3">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>60</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="2">
+     <spacer name="horizontalSpacer_4">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Expanding</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="10">
+     <spacer name="horizontalSpacer_10">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>60</width>
+        <height>13</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="7">
+     <widget class="QLabel" name="lblSignal">
+      <property name="minimumSize">
+       <size>
+        <width>15</width>
+        <height>12</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>15</width>
+        <height>12</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="resources.qrc">:/icons/icons/Signal_Full.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QFrame" name="frmInputArea">
+   <property name="geometry">
+    <rect>
+     <x>69</x>
+     <y>129</y>
+     <width>641</width>
+     <height>521</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>514</width>
+     <height>383</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>999999</width>
+     <height>999999</height>
+    </size>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QFrame {
+  background: #ffffff;
+  border-radius: 20px;
+  height: 864.62px;
+  position: relative;
+  box-shadow: 0px 2px 60px 0px rgba(20, 65, 120, 0.02);
+
+}
+</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>10</y>
+      <width>191</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>添加配送地址</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>120</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>栋号：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>120</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>单元号：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>190</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>房间号：</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="frame_5">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>230</y>
+      <width>561</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QFrame{  
+background: #f5f7fa;
+  border-radius: 8px;
+  height: 102.57px;
+  position: relative
+}</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QWidget" name="layoutWidget_3">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>10</y>
+       <width>299</width>
+       <height>81</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="2">
+       <widget class="QLineEdit" name="editRoom">
+        <property name="minimumSize">
+         <size>
+          <width>130</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>130</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+border: 2px solid #e0e5ea;         /* 浅灰色描边 */
+    border-radius: 8px;               /* 圆角半径（根据高度调整）*/
+    background: #fff;                  /* 白底 */
+    font-family: 'Microsoft YaHei';
+    font-size: 12px;                   /* 字体大小 */
+    color: #222;                       /* 文字颜色 */
+    padding-left: 18px;                /* 左侧内边距让文字不贴边 */
+    height: 56px;                      /* 高度，和实际按钮一致 */
+}</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="lblRoomSuffix">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+rgba(25, 25, 25, 50)
+
+}</string>
+        </property>
+        <property name="text">
+         <string>室</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>13</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblRoomTip">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+rgba(25, 25, 25, 50)
+
+}</string>
+        </property>
+        <property name="text">
+         <string>请输入房间号：</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QLabel" name="frmCurrentAddress">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>390</y>
+      <width>561</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei</family>
+      <pointsize>12</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+    background: #eaf5ff;                           /* 浅蓝背景 */
+    border: 2px dashed #3777c2;                    /* 蓝色虚线边框 */
+    border-radius: 12px;                            /* 圆角 */
+    color: #222;                                    /* 字体颜色 */
+    font-family: 'Microsoft YaHei';
+    font-weight: bold;                              /* 加粗 */
+    padding: 14px 10px 14px 16px;                   /* 内边距（可调）*/
+}
+</string>
+    </property>
+    <property name="text">
+     <string>1栋 2单元 301室</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblCurrentAddressTip">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>360</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei</family>
+      <pointsize>10</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+    color: #99b7db;          /* 浅蓝灰色（比主文字浅）*/
+    font-weight: normal;     /* 不加粗 */
+    font-family: 'Microsoft YaHei';
+    background: transparent; /* 通常不用背景 */
+    padding-left: 2px;       /* 和内容略微错开一点 */
+}
+</string>
+    </property>
+    <property name="text">
+     <string>当前地址：</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="cmbBuilding">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>110</y>
+      <width>130</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>130</width>
+      <height>50</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>130</width>
+      <height>50</height>
+     </size>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei</family>
+      <pointsize>-1</pointsize>
+     </font>
+    </property>
+    <property name="cursor">
+     <cursorShape>ArrowCursor</cursorShape>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"> QComboBox{
+ 	border: 2px solid #e0e5ea; 
+    border-radius: 8px;
+    background: #fff; 
+    font-family: 'Microsoft YaHei';
+    font-size: 16px; 
+    color: #222;
+    padding-left: 18px; 
+    height: 56px; 
+}
+</string>
+    </property>
+    <item>
+     <property name="text">
+      <string>1栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>5栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>6栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>7栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>8栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>9栋</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>10栋</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QComboBox" name="cmbUnit">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>110</y>
+      <width>130</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>130</width>
+      <height>50</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>130</width>
+      <height>50</height>
+     </size>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"> QComboBox{\n 	border: 2px solid #e0e5ea; \n    border-radius: 8px;\n    background: #fff; \n    font-family: 'Microsoft YaHei';\n    font-size: 16px; \n    color: #222;\n    padding-left: 18px; \n    height: 56px; \n}\n</string>
+    </property>
+    <item>
+     <property name="text">
+      <string>1单元</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2单元</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3单元</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4单元</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>5单元</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>6单元</string>
+     </property>
+    </item>
+   </widget>
+  </widget>
+  <widget class="QFrame" name="frmKeypad">
+   <property name="geometry">
+    <rect>
+     <x>760</x>
+     <y>130</y>
+     <width>371</width>
+     <height>521</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>320</width>
+     <height>383</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>99999</width>
+     <height>99999</height>
+    </size>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QFrame {
+  background: #ffffff;
+  border-radius: 20px;
+  height: 864.62px;
+  position: relative;
+  box-shadow: 0px 2px 60px 0px rgba(20, 65, 120, 0.02);
+
+}
+</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_12">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>400</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>常用地址：</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>40</y>
+      <width>311</width>
+      <height>351</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_5">
+     <property name="spacing">
+      <number>3</number>
+     </property>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="btnNum5">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>5</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="btnNum2">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>2</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="btnNum8">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>8</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="btnNum4">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>4</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QPushButton" name="btnNum1">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QPushButton" name="btnNumClear">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>Microsoft YaHei</family>
+         <pointsize>-1</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #ff6f6f;             /* 鲜亮红色背景 */
+    color: #fff;                     /* 白色字体 */
+    border: none;                    /* 无边框 */
+    border-radius: 16px;             /* 大圆角，根据按钮高度调整 */
+    font-size: 14px;                 /* 字体大小 */
+    font-family: 'Microsoft YaHei';  /* 字体族 */
+    font-weight: bold;               /* 字体加粗 */
+    min-width: 74px;                 /* 最小宽度 */
+    min-height: 54px;                /* 最小高度 */
+}
+QPushButton:pressed {
+    background: #ff4c4c;             /* 按下时稍深的红色 */
+}
+</string>
+       </property>
+       <property name="text">
+        <string>清除</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QPushButton" name="btnNumConfirm">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>Microsoft YaHei</family>
+         <pointsize>-1</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #4caf50;             /* 鲜亮红色背景 */
+    color: #fff;                     /* 白色字体 */
+    border: none;                    /* 无边框 */
+    border-radius: 16px;             /* 大圆角，根据按钮高度调整 */
+    font-size: 14px;                 /* 字体大小 */
+    font-family: 'Microsoft YaHei';  /* 字体族 */
+    font-weight: bold;               /* 字体加粗 */
+    min-width: 74px;                 /* 最小宽度 */
+    min-height: 54px;                /* 最小高度 */
+}
+QPushButton:pressed {
+    background: #388e3c;             /* 按下时稍深的绿色 */
+}
+</string>
+       </property>
+       <property name="text">
+        <string>确认</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="btnNum6">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>6</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="btnNum7">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>7</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="btnNum3">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>3</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="btnNum9">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>9</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QPushButton" name="btnNum0">
+       <property name="minimumSize">
+        <size>
+         <width>74</width>
+         <height>54</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>64</width>
+         <height>42</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>-1</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fafbfc;
+    border: 2px solid #e0e5ea;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #222;
+    min-width: 70px;
+    min-height: 50px;
+}
+QPushButton:pressed {
+    background: #f2f6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QLabel" name="lblKeypadTitle">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>10</y>
+      <width>191</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>数字键盘</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>430</y>
+      <width>311</width>
+      <height>42</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="btnQuickAddr1">
+       <property name="minimumSize">
+        <size>
+         <width>90</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>90</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fff;
+    border: 2px solid #e0e5ea;
+    border-radius: 8px;
+    color: #222;
+    font-family: 'Microsoft YaHei';
+    font-weight: normal;
+}
+QPushButton:pressed {
+    background: #f6f9fb;     /* 按下时轻微变灰 */
+    border-color: #b6b9be;   /* 边框变深一点 */
+}</string>
+       </property>
+       <property name="text">
+        <string>1-2-301</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnQuickAddr2">
+       <property name="minimumSize">
+        <size>
+         <width>90</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>90</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fff;
+    border: 2px solid #e0e5ea;
+    border-radius: 8px;
+    color: #222;
+    font-family: 'Microsoft YaHei';
+    font-weight: normal;
+}
+QPushButton:pressed {
+    background: #f6f9fb;     /* 按下时轻微变灰 */
+    border-color: #b6b9be;   /* 边框变深一点 */
+}</string>
+       </property>
+       <property name="text">
+        <string>1-2-301</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnQuickAddr3">
+       <property name="minimumSize">
+        <size>
+         <width>90</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>90</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background: #fff;
+    border: 2px solid #e0e5ea;
+    border-radius: 8px;
+    color: #222;
+    font-family: 'Microsoft YaHei';
+    font-weight: normal;
+}
+QPushButton:pressed {
+    background: #f6f9fb;     /* 按下时轻微变灰 */
+    border-color: #b6b9be;   /* 边框变深一点 */
+}</string>
+       </property>
+       <property name="text">
+        <string>1-2-301</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <zorder>btnQuickAddr1</zorder>
+   <zorder>btnQuickAddr3</zorder>
+   <zorder>label_12</zorder>
+   <zorder>layoutWidget</zorder>
+   <zorder>lblKeypadTitle</zorder>
+   <zorder>btnQuickAddr2</zorder>
+  </widget>
+  <widget class="QPushButton" name="btnCreateTaskConfirm">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>700</y>
+     <width>641</width>
+     <height>54</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>200</width>
+     <height>54</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>800</width>
+     <height>54</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei</family>
+     <pointsize>-1</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="mouseTracking">
+    <bool>false</bool>
+   </property>
+   <property name="tabletTracking">
+    <bool>false</bool>
+   </property>
+   <property name="acceptDrops">
+    <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+    background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #61A9FF, stop:1 #182490);
+    color: #FFF;
+    border-radius: 16px;
+    font-size: 18px;
+    font-family: 'Microsoft YaHei';
+    font-weight: bold;
+    min-width: 514px;
+    min-height: 54px;
+}
+QPushButton:pressed {
+    background: #f0f6ff;
+}
+</string>
+   </property>
+   <property name="text">
+    <string>确认创建配送任务</string>
+   </property>
+   <property name="autoDefault">
+    <bool>false</bool>
+   </property>
+   <property name="default">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnBack">
+   <property name="geometry">
+    <rect>
+     <x>1040</x>
+     <y>720</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>111</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>111</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+    background: transparent;    /* 没有背景 */
+    border: none;               /* 没有边框 */
+    color: rgba(37, 37, 37, 80);  /* 浅灰色，和界面一致 */
+    font-size: 20px;            /* 字体大小，可按实际需求调 */
+    font-family: 'Microsoft YaHei';
+    font-weight: normal;        /* 不加粗 */
+    padding: 0 6px;
+}
+QPushButton:pressed {
+    color: #888e99;             /* 按下时颜色略深 */
+}
+</string>
+   </property>
+   <property name="text">
+    <string>&lt;&lt;&lt;返回</string>
+   </property>
+  </widget>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

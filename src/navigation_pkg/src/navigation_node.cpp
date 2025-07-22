@@ -18,13 +18,14 @@ public:
 
         // Initialize room-to-position mapping
         room_positions_ = {
-            {1, {{5.6, -1.9, 0.0}, {0.0, 0.0, -0.014, 0.99}}}, // Position: x, y, z; Orientation: x, y, z, w
-            {2, {{11.7, -1.9, 0.0}, {0.0, 0.0, -0.014, 0.99}}},
-            {3, {{6.80, 2.90, 0.0}, {0.0, 0.0, 0.69, 0.72}}},
+            {1, {{5.49, -1.1, 0.0}, {0.0, 0.0, -0.0098, 0.99}}}, // Position: x, y, z; Orientation: x, y, z, w
+            {2, {{13.14, -0.52, 0.0}, {0.0, 0.0, -0.0027, 0.99}}},
+            {3, {{21.60, 2.91, 0.0}, {0.0, 0.0, 0.69, 0.72}}},
+            {4, {{6.91, 2.53, 0.0}, {0.0, 0.0, 0.71, 0.71}}}
             // Add more room mappings as needed
         };
 
-        init_position_ = {{-0.41, -1.14, 0.0}, {0.0, 0.0, 0.99, 0.030}}; // Default position and orientation
+        init_position_ = {{0.26, -0.89, 0.0}, {0.0, 0.0, 0.99, -0.015}}; // Default position and orientation
     }
 
     void executeCB(const robot_msgs::deliveryGoalConstPtr& goal)
@@ -71,7 +72,7 @@ public:
 
         // Create and send navigation goal
         move_base_msgs::MoveBaseGoal nav_goal;
-        nav_goal.target_pose.header.frame_id = "map_2d";
+        nav_goal.target_pose.header.frame_id = "map_3d";
         nav_goal.target_pose.header.stamp = ros::Time::now();
         nav_goal.target_pose.pose.position.x = target_position[0];
         nav_goal.target_pose.pose.position.y = target_position[1];

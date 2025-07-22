@@ -19,6 +19,7 @@ add_message_files(
   Marker.msg
   MarkerArray.msg
   Marker2dPose.msg
+  Door_open.msg
 )
 
 add_service_files(
