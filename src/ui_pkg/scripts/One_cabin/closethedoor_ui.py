@@ -103,10 +103,11 @@ class Ui_Dialog(object):
 
 
 class ClosethedoorDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, comm_node=None):
         super().__init__(parent)
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
+        self.comm_node = comm_node
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         # 其他初始化代码...
 
@@ -115,7 +116,7 @@ class ClosethedoorDialog(QtWidgets.QDialog):
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # 设置透明背景以显示圆角
 
         # 连接按钮点击事件
-        self.ui.pushButton_2.clicked.connect(self.close)
+        self.ui.pushButton_2.clicked.connect(self.custom_close)
         self.ui.label_4.mousePressEvent = self.contact_customer_service
         self.ui.label_5.mousePressEvent = self.contact_customer_service
         
@@ -132,6 +133,12 @@ class ClosethedoorDialog(QtWidgets.QDialog):
             
         # 设置GIF动画
         self.setup_gif_animation()
+
+    def custom_close(self):
+        # 执行关闭前的逻辑
+        if self.comm_node:
+            self.comm_node.pickup_result = True
+        self.close()
     
     def setup_gif_animation(self):
         """设置GIF动画，并调整其尺寸"""

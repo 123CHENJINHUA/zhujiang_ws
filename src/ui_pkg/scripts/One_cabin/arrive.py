@@ -9,7 +9,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from closethedoor_ui import ClosethedoorDialog  # 正确导入ClosethedoorDialog类
+from ui_pkg.scripts.One_cabin.closethedoor_ui import ClosethedoorDialog  # 正确导入ClosethedoorDialog类
 
 
 
@@ -103,11 +103,12 @@ class Ui_Dialog(object):
 
 
 class ArriveDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, comm_node=None):
         super().__init__(parent)
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
-        
+        self.comm_node = comm_node
+
         # 设置无边框窗口
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         
@@ -126,8 +127,11 @@ class ArriveDialog(QtWidgets.QDialog):
     
     def open_cabinet_dialog(self):
         try:
+                
+                self.comm_node.publish_door_open(door_number=1)  # 发布开门消息，假设门编号为1
+
                 # 创建关门对话框
-                self.close_dialog = ClosethedoorDialog(self.parent())
+                self.close_dialog = ClosethedoorDialog(self.parent(),self.comm_node)
                 
                 # 获取父窗口的中心位置
                 parent = self.parent()
@@ -172,4 +176,4 @@ class ArriveDialog(QtWidgets.QDialog):
 
 
 
-import resources_rc
+import ui_pkg.scripts.One_cabin.resources_rc as resources_rc 

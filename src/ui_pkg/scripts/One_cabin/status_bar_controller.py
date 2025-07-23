@@ -1,13 +1,25 @@
 from PyQt5 import QtCore, QtGui
 
 class StatusBarController(QtCore.QObject):
-    def __init__(self, parent=None):
+    def __init__(self, comm_node, parent=None):
         super().__init__(parent)
+
+        self.comm_node = comm_node
+        self.battery_status = 0  # 用于接收电池状态
+        self.comm_node.signal_recv_msg.connect(self.set_recv_msgs)
+
         self.status_bars = []
         self.charging = False  # 全局充电状态
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_all)
         self.timer.start(1000)  # 1秒刷新一次
+
+    def set_recv_msgs(self, battery_status):
+        """
+        接收来自comm_node的消息，更新电池状态。
+        :param battery_status: 电池状态值
+        """
+        self.battery_status = battery_status
 
     def register(self, lblTime, lblDate, lblSignal, lblwifi, lblBattery):
         # 允许lblDate为None（如果没有日期标签）
@@ -46,7 +58,14 @@ class StatusBarController(QtCore.QObject):
         if self.charging:
             bat = battery_icons[-1]  # 显示充电图标
         else:
-            bat = random.choice(battery_icons[:-1])  # 普通电量随机
+            if self.battery_status <= 25:
+                bat = battery_icons[0]  # 低电量
+            elif self.battery_status <= 50:
+                bat = battery_icons[1]  # 中等电量
+            elif self.battery_status > 50:  # 高电量
+                bat = battery_icons[2]  # 高电量
+            else:
+                bat = battery_icons[3]  # 默认充电图标
 
         sig = random.choice(signal_icons)
         wifi = random.choice(wifi_icons)

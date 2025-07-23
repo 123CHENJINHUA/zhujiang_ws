@@ -47,4 +47,4 @@ class Ui_MainWindow(object):
     
 
 
-import resources_rc
+import ui_pkg.scripts.One_cabin.resources_rc as resources_rc

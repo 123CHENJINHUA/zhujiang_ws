@@ -11,6 +11,7 @@
 #include "robot_msgs/ui_show.h"
 #include "robot_msgs/ui_get.h"
 #include "robot_msgs/pick.h"
+#include "robot_msgs/Door_open.h"
 #include "robot_msgs/deliveryAction.h" 
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
@@ -81,6 +82,7 @@ private:
     // 订阅者
     ros::Subscriber tracer_status_sub_;
     ros::Subscriber navigation_status_sub_;
+    ros::Subscriber ui_door_open_sub_;
 
     // 客户端
     ros::ServiceClient delivery_cmd_client_;
@@ -108,6 +110,7 @@ private:
     // 回调函数声明
     void tracerStatusCallback(const tracer_msgs::TracerStatus::ConstPtr& msg);
     void navigationStatusCallback(const std_msgs::String::ConstPtr& msg);
+    void doorOpenCallback(const robot_msgs::Door_open::ConstPtr& msg);
 
     bool uiGetCallback(robot_msgs::ui_get::Request& req, robot_msgs::ui_get::Response& res);
 

@@ -34,8 +34,8 @@ void TracerROSMessenger::SetupSubscription()
     status_uart_publisher_ = nh_->advertise<tracer_msgs::UartTracerStatus>("/uart_tracer_status", 10);
 
     // cmd subscriber
-    motion_cmd_subscriber_ = nh_->subscribe<geometry_msgs::Twist>("/cmd_vel", 5, &TracerROSMessenger::TwistCmdCallback, this); //不启用平滑包则订阅“cmd_vel”
-    // motion_cmd_subscriber_ = nh_->subscribe<geometry_msgs::Twist>("/smooth_cmd_vel", 5, &TracerROSMessenger::TwistCmdCallback, this); //启用平滑包则订阅“/smooth_cmd_vel”
+    // motion_cmd_subscriber_ = nh_->subscribe<geometry_msgs::Twist>("/cmd_vel", 5, &TracerROSMessenger::TwistCmdCallback, this); //不启用平滑包则订阅“cmd_vel”
+    motion_cmd_subscriber_ = nh_->subscribe<geometry_msgs::Twist>("/smooth_cmd_vel", 5, &TracerROSMessenger::TwistCmdCallback, this); //启用平滑包则订阅“/smooth_cmd_vel”
     light_cmd_subscriber_ = nh_->subscribe<tracer_msgs::TracerLightCmd>("/tracer_light_control", 5, &TracerROSMessenger::LightCmdCallback, this);
 }
 

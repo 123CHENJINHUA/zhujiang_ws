@@ -87,8 +87,6 @@ class Ui_Form(object):
 "  border-radius: 20px;\n"
 "  height: 864.62px;\n"
 "  position: relative;\n"
-"  box-shadow: 0px 2px 60px 0px rgba(20, 65, 120, 0.02);\n"
-"\n"
 "}\n"
 "")
         self.frmInputArea.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -223,7 +221,7 @@ class Ui_Form(object):
         self.cmbBuilding.setMaximumSize(QtCore.QSize(130, 50))
         font = QtGui.QFont()
         font.setFamily("Microsoft YaHei")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         self.cmbBuilding.setFont(font)
         self.cmbBuilding.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         self.cmbBuilding.setStyleSheet(" QComboBox{\n"
@@ -273,7 +271,6 @@ class Ui_Form(object):
 "  border-radius: 20px;\n"
 "  height: 864.62px;\n"
 "  position: relative;\n"
-"  box-shadow: 0px 2px 60px 0px rgba(20, 65, 120, 0.02);\n"
 "\n"
 "}\n"
 "")
@@ -299,7 +296,7 @@ class Ui_Form(object):
         self.btnNum5.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum5.setFont(font)
@@ -322,7 +319,7 @@ class Ui_Form(object):
         self.btnNum2.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum2.setFont(font)
@@ -345,7 +342,7 @@ class Ui_Form(object):
         self.btnNum8.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum8.setFont(font)
@@ -368,7 +365,7 @@ class Ui_Form(object):
         self.btnNum4.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum4.setFont(font)
@@ -391,7 +388,7 @@ class Ui_Form(object):
         self.btnNum1.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum1.setFont(font)
@@ -414,7 +411,7 @@ class Ui_Form(object):
         self.btnNumClear.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("Microsoft YaHei")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(True)
         font.setWeight(75)
         self.btnNumClear.setFont(font)
@@ -440,7 +437,7 @@ class Ui_Form(object):
         self.btnNumConfirm.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("Microsoft YaHei")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(True)
         font.setWeight(75)
         self.btnNumConfirm.setFont(font)
@@ -466,7 +463,7 @@ class Ui_Form(object):
         self.btnNum6.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum6.setFont(font)
@@ -489,7 +486,7 @@ class Ui_Form(object):
         self.btnNum7.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum7.setFont(font)
@@ -512,7 +509,7 @@ class Ui_Form(object):
         self.btnNum3.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum3.setFont(font)
@@ -535,7 +532,7 @@ class Ui_Form(object):
         self.btnNum9.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum9.setFont(font)
@@ -558,7 +555,7 @@ class Ui_Form(object):
         self.btnNum0.setMaximumSize(QtCore.QSize(64, 42))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(False)
         font.setWeight(50)
         self.btnNum0.setFont(font)
@@ -657,7 +654,7 @@ class Ui_Form(object):
         self.btnCreateTaskConfirm.setMaximumSize(QtCore.QSize(800, 54))
         font = QtGui.QFont()
         font.setFamily("Microsoft YaHei")
-        font.setPointSize(-1)
+        # font.setPointSize(-1)
         font.setBold(True)
         font.setWeight(75)
         self.btnCreateTaskConfirm.setFont(font)
@@ -787,4 +784,4 @@ class Ui_Form(object):
         self.btnQuickAddr3.setText(_translate("Form", "1-2-301"))
         self.btnCreateTaskConfirm.setText(_translate("Form", "确认创建配送任务"))
         self.btnBack.setText(_translate("Form", "<<<返回"))
-import resources_rc
+import ui_pkg.scripts.One_cabin.resources_rc as resources_rc

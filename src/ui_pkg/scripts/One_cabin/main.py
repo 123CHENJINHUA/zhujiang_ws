@@ -1,15 +1,144 @@
-import resources_rc
+#!/home/cjh/miniconda3/envs/zhujiang/bin/python
+
+import sys
+sys.path.insert(0, "/home/cjh/miniconda3/envs/zhujiang/lib/python3.10/site-packages")
+sys.path.insert(0, "/home/cjh/zhujiang_ws/src")
+
+import rospy
+from std_msgs.msg import String
+import threading
+import queue
+import time
+from playsound3 import playsound
+from robot_msgs.msg import ui_show
+from robot_msgs.msg import Door_open
+from robot_msgs.srv import ui_get, ui_getRequest, ui_getResponse
+from robot_msgs.srv import pick, pickResponse
+
+from PyQt5.QtCore import QObject, pyqtSignal
+
+import ui_pkg.scripts.One_cabin.resources_rc
 import sys
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets, QtCore
-from homepage_ui import Ui_MainWindow
-from send_ui import Ui_Form as Ui_SendWindow
-from status_bar_controller import StatusBarController
-from Face_ui import Ui_MainWindow as Ui_FaceMainWindow
-from arrive import ArriveDialog  
-from closethedoor_ui import ClosethedoorDialog  
-from pickup_ui import Ui_Form
+from ui_pkg.scripts.One_cabin.homepage_ui import Ui_MainWindow
+from ui_pkg.scripts.One_cabin.send_ui import Ui_Form as Ui_SendWindow
+from ui_pkg.scripts.One_cabin.status_bar_controller import StatusBarController
+from ui_pkg.scripts.One_cabin.Face_ui import Ui_MainWindow as Ui_FaceMainWindow
+from ui_pkg.scripts.One_cabin.arrive import ArriveDialog  
+from ui_pkg.scripts.One_cabin.closethedoor_ui import ClosethedoorDialog  
+from ui_pkg.scripts.One_cabin.pickup_ui import Ui_Form
+from ui_pkg.scripts.One_cabin.TaskSuccessDialog import Ui_Dialog
 
+class UiNode(QObject):
+    signal_recv_msg = pyqtSignal(int)  # Qt信号
+    signal_set_pickup_code = pyqtSignal(str)  # 用于显示弹窗的信号
+
+    def __init__(self):
+        super(UiNode, self).__init__()
+        # 订阅 /UI_show
+        self.ui_show_sub = rospy.Subscriber("/UI_show", ui_show, self.ui_show_callback)
+        # 订阅 /speach
+        self.speach_sub = rospy.Subscriber("/speach", String, self.speach_callback)
+        # 订阅 /calling
+        self.calling_sub = rospy.Subscriber("/calling", String, self.calling_callback)
+        # ui客户端
+        self.ui_get_client = rospy.ServiceProxy('/UI_get', ui_get)
+
+        # pickup 服务端
+        self.pickup_service = rospy.Service('/pickup', pick, self.handle_pickup)
+
+        # 添加Door_open话题发布者
+        self.door_open_pub = rospy.Publisher('/ui_door_open', Door_open, queue_size=10)
+
+        self.pickup_result = None  # 用于存储取件码结果
+        self.Is_need_pickup_code = False  # 用于标记是否需要取件
+        self.arrived = False  # 用于标记是否到达目的地
+
+        # 音频播放相关
+        self.voice_msgs_path = "/home/cjh/zhujiang_ws/src/ui_pkg/voice_msgs"
+
+        self.sound = playsound(f'{self.voice_msgs_path}/{99}.wav', block=False)
+
+        self.is_music = False  # 用于判断是否正在播放音乐
+
+        # 创建音频播放线程
+        self.audio_thread = threading.Thread(target=self._audio_worker, daemon=True)
+        self.audio_thread.start()
+
+    def publish_door_open(self, door_number):
+        """发布开门消息"""
+        try:
+            msg = Door_open()
+            msg.door_num = door_number
+            self.door_open_pub.publish(msg)
+            rospy.loginfo(f"Published door open message: door_num={door_number}")
+        except Exception as e:
+            rospy.logerr(f"Failed to publish door open message: {e}")
+
+    def _audio_worker(self):
+        while not rospy.is_shutdown():
+            try:
+                if self.is_music and not self.sound.is_alive():  # 检查音频路径是否有效且当前没有音频在播放
+                    self.sound = playsound(f'{self.voice_msgs_path}/{100}.wav', block=False)  # 播放音频
+            except Exception as e:
+                rospy.logerr(f"Audio playback error: {e}")
+
+
+    # 订阅
+    def ui_show_callback(self, msg):
+        # rospy.loginfo("network: %s, odometry: %s, speed: %s, working_time: %s, battery: %s, task_status: %s", msg.network, msg.odometry, msg.speed, msg.working_time, msg.battery, msg.task_status)
+        self.signal_recv_msg.emit(msg.battery)  # 发射任务状态信号(battery)
+
+    def speach_callback(self, msg):
+        wav_path = f'{self.voice_msgs_path}/{msg.data}.wav'
+        rospy.loginfo("Received speech message: %s", msg.data)
+        if msg.data == '100':
+            self.is_music = True  # 设置正在播放音乐状态
+        else:
+            if self.is_music:
+                self.sound.stop()  # 停止当前音乐
+                self.is_music = False  # 重置音乐状态
+            playsound(wav_path, block=True)  # 播放语音消息
+            
+
+
+    def calling_callback(self, msg):
+        rospy.loginfo("data: %s", msg.data)
+
+    # 客户端
+    def call_ui_get(self, delivery_list):
+        try:
+            req = ui_getRequest()
+            req.delivery_list = delivery_list
+            resp = self.ui_get_client.call(req)
+            if resp.received:
+                rospy.loginfo("UI_get call success, task list received.")
+            else:
+                rospy.logwarn("UI_get call failed, task list not accepted.")
+            return resp
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Service call failed: {e}")
+            return None
+        
+    def handle_pickup(self, req):
+        rospy.loginfo("Received pickup request: %d", req.pickup_code)
+        self.pickup_result = None  # 每次请求前重置
+        self.arrived = True
+        if req.pickup_code > 0:
+            self.Is_need_pickup_code = True
+            self.signal_set_pickup_code.emit(str(req.pickup_code))
+        else:
+            self.Is_need_pickup_code = False
+          # 发射信号显示弹窗
+        resp = pickResponse()
+
+        # 等待用户输入，直到 self.pickup_result 被设置
+        while self.pickup_result is None and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+
+        resp.success = self.pickup_result if self.pickup_result is not None else False
+        return resp
 
 # 自适应缩放混入类
 class AdaptiveMixin:
@@ -103,15 +232,12 @@ class AdaptiveMixin:
         self.resize(new_width, new_height)
         self.center_window()
 
-
-# 全局实例，只定义一次
-status_bar_ctrl = StatusBarController()
-
 class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
-    def __init__(self, main_window=None):
+    def __init__(self, main_window=None,comm_node=None, status_bar_ctrl=None):
         super().__init__()
         self.setupUi(self)
         self.main_window = main_window
+        self.comm_node = comm_node 
 
         # 初始化自适应功能
         self.init_adaptive(1280, 800)
@@ -120,7 +246,7 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
         status_bar_ctrl.register(self.label, None, self.signalLabel_2, self.wifiLabel_2, self.label_5)
 
         # 验证码系统设置
-        self.valid_codes = ["1234", "5678", "9012", "2468", "1357"]  # 多个有效验证码
+        self.valid_codes =  None
         self.attempt_count = 0  # 尝试次数计数器
         self.max_attempts = 3   # 最大尝试次数
         
@@ -167,17 +293,24 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
         
         # 连接新按钮到show_main_window方法
         self.back_button.clicked.connect(self.show_main_window)
-        print(f"新返回按钮: {self.back_button}")
-        print(f"新返回按钮是否可见: {self.back_button.isVisible()}")
-        print(f"新返回按钮文本: {self.back_button.text()}")
-        print(f"新返回按钮大小: {self.back_button.size()}")
-        print(f"新返回按钮位置: {self.back_button.pos()}")
+        # print(f"新返回按钮: {self.back_button}")
+        # print(f"新返回按钮是否可见: {self.back_button.isVisible()}")
+        # print(f"新返回按钮文本: {self.back_button.text()}")
+        # print(f"新返回按钮大小: {self.back_button.size()}")
+        # print(f"新返回按钮位置: {self.back_button.pos()}")
         
         # 不再使用原始的pushButton_17，因为它在UI文件中没有正确创建
         # 只使用新创建的back_button
-        print(f"使用新的返回按钮替代原始的pushButton_17")
+        # print(f"使用新的返回按钮替代原始的pushButton_17")
         
         self.update_fields()  # 初始化
+
+    def set_valid_codes(self,valid_codes):
+        """
+        设置有效的取件码列表。
+        :param valid_codes: 有效取件码列表
+        """
+        self.valid_codes = valid_codes
 
     def input_digit(self, d):
         if len(self.code) < 4:
@@ -199,11 +332,13 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
     def confirm_code(self):
         if len(self.code) == 4:
             # 验证码验证
-            if self.code in self.valid_codes:
+            if self.code == self.valid_codes:
                 # 验证码正确
                 
                 # 可选：使用后移除此验证码（一次性验证码）
                 # self.valid_codes.remove(self.code)
+
+                self.comm_node.publish_door_open(door_number=1)  # 发布开门消息，假设门编号为1
                 
                 # 重置尝试次数
                 self.attempt_count = 0
@@ -215,7 +350,7 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
                 self.overlay.show()
                 
                 # 创建并显示开门对话框
-                self.door_dialog = ClosethedoorDialog(self)
+                self.door_dialog = ClosethedoorDialog(self,self.comm_node)
                 
                 # 设置对话框样式
                 self.door_dialog.setStyleSheet("""
@@ -248,6 +383,7 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
                         "验证失败", 
                         "您已超过最大尝试次数，请稍后再试！"
                     )
+                    self.comm_node.pickup_result = False  # 标记取件码不正确
                     self.go_back()  # 返回主界面
                 else:
                     # 显示错误信息和剩余尝试次数
@@ -266,32 +402,32 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
             self.overlay.deleteLater()
 
     def show_main_window(self):
-        print("show_main_window方法被调用")
+        # print("show_main_window方法被调用")
         try:
-            print("隐藏当前窗口")
+            # print("隐藏当前窗口")
             self.hide()
             if self.main_window:
                 self.main_window.showFullScreen()
-                print("主窗口显示成功")
+                # print("主窗口显示成功")
             self.clear_code()
             # 重置尝试次数
             self.attempt_count = 0
-            print("返回到主窗口成功")
+            # print("返回到主窗口成功")
         except Exception as e:
-            print(f"显示主窗口时出错: {e}")
+            # print(f"显示主窗口时出错: {e}")
             # 如果出错，尝试使用go_back方法
             self.go_back()
 
     def go_back(self):
-        print("\n\n返回按钮被点击 - go_back方法被调用 - " + self.__class__.__name__ + "\n\n")
-        print(f"返回按钮对象: {self.pushButton_17}")
-        print(f"返回按钮连接的槽函数: {self.pushButton_17.receivers(self.pushButton_17.clicked)}个")
+        # print("\n\n返回按钮被点击 - go_back方法被调用 - " + self.__class__.__name__ + "\n\n")
+        # print(f"返回按钮对象: {self.pushButton_17}")
+        # print(f"返回按钮连接的槽函数: {self.pushButton_17.receivers(self.pushButton_17.clicked)}个")
         
         # 直接调用show_main_window方法，该方法已经包含了显示主窗口和隐藏当前窗口的逻辑
         try:
-            print("调用show_main_window方法")
+            # print("调用show_main_window方法")
             self.show_main_window()
-            print("show_main_window方法调用成功")
+            # print("show_main_window方法调用成功")
             return  # 成功调用后直接返回
         except Exception as e:
             print(f"调用show_main_window方法出错: {e}")
@@ -302,9 +438,9 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
         # 备用逻辑：手动处理返回操作
         # 先隐藏当前窗口，再显示主窗口，避免界面闪烁
         try:
-            print("备用逻辑：隐藏当前窗口")
+            # print("备用逻辑：隐藏当前窗口")
             self.hide()
-            print("当前窗口隐藏成功")
+            # print("当前窗口隐藏成功")
         except Exception as e:
             print(f"隐藏当前窗口时出错: {e}")
             import traceback
@@ -312,10 +448,10 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
             
         # 显示主窗口
         if hasattr(self, 'main_window') and self.main_window:
-            print(f"主窗口存在，显示主窗口: {self.main_window}")
+            # print(f"主窗口存在，显示主窗口: {self.main_window}")
             try:
                 self.main_window.showFullScreen()
-                print("主窗口显示成功")
+                # print("主窗口显示成功")
             except Exception as e:
                 print(f"显示主窗口时出错: {e}")
                 import traceback
@@ -325,10 +461,10 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
             
         # 清除验证码
         try:
-            print("清除验证码")
+            # print("清除验证码")
             self.code = ""
             self.update_fields()
-            print("验证码清除成功")
+            # print("验证码清除成功")
         except Exception as e:
             print(f"清除验证码时出错: {e}")
             import traceback
@@ -336,8 +472,8 @@ class PickupWindow(QtWidgets.QWidget, Ui_Form, AdaptiveMixin):
             
         # 重置尝试次数
         self.attempt_count = 0
-        print("尝试次数已重置")
-        print("\n\ngo_back方法执行完毕\n\n")
+        # print("尝试次数已重置")
+        # print("\n\ngo_back方法执行完毕\n\n")
         
     # 可选：验证码管理方法
     def add_valid_code(self, code):
@@ -396,10 +532,11 @@ class ClickableLabel(QtWidgets.QLabel):
         super().mouseDoubleClickEvent(event)
         
 class FaceWindow(QtWidgets.QMainWindow, Ui_FaceMainWindow, AdaptiveMixin):
-    def __init__(self, main_window=None):
+    def __init__(self, main_window=None, comm_node=None):
         super().__init__()
         self.setupUi(self)
         self.main_window = main_window  # 保存主页实例
+        self.comm_node = comm_node
 
         # 初始化自适应功能
         self.init_adaptive(1280, 800)
@@ -423,8 +560,22 @@ class FaceWindow(QtWidgets.QMainWindow, Ui_FaceMainWindow, AdaptiveMixin):
         # 绑定双击事件
         self.label.doubleClicked.connect(self.go_home)
 
-        # 6秒后自动弹窗
-        QtCore.QTimer.singleShot(6000, self.show_arrive_dialog)
+        # 创建定时器来持续检查到达条件
+        self.check_arrival_timer = QtCore.QTimer(self)
+        self.check_arrival_timer.timeout.connect(self.check_arrival_condition)
+        self.check_arrival_timer.start(500)  # 每500毫秒检查一次
+        
+        # 添加标志防止重复弹窗
+        self.dialog_shown = False
+        
+    def check_arrival_condition(self):
+        """持续检查到达条件，满足条件时触发弹窗"""
+        if (not self.comm_node.Is_need_pickup_code and 
+            self.comm_node.arrived and 
+            not self.dialog_shown):
+            # 如果不需要取件码且已经到达目的地，且还未显示对话框
+            self.dialog_shown = True  # 设置标志防止重复弹窗
+            self.show_arrive_dialog()
         
     def show_arrive_dialog(self):
         # 半透明黑色遮罩
@@ -434,7 +585,7 @@ class FaceWindow(QtWidgets.QMainWindow, Ui_FaceMainWindow, AdaptiveMixin):
         self.overlay.show()
 
         # 白底圆角弹窗
-        self.arrive_dialog = ArriveDialog(self)
+        self.arrive_dialog = ArriveDialog(self,comm_node=self.comm_node)
 
         self.arrive_dialog.setStyleSheet("""
             QDialog {
@@ -454,23 +605,35 @@ class FaceWindow(QtWidgets.QMainWindow, Ui_FaceMainWindow, AdaptiveMixin):
 
     def close_overlay(self):
         if hasattr(self, 'overlay'):
+            self.comm_node.arrived = False  # 重置到达状态
             self.overlay.hide()
             self.overlay.deleteLater()
+            # 重置对话框显示标志，允许下次条件满足时再次弹窗
+            self.dialog_shown = False
 
     def go_home(self):
         if self.main_window:
             self.main_window.showFullScreen()
             # self.main_window.showFullScreen()
         self.hide()
+        
+    def closeEvent(self, event):
+        """窗口关闭时停止定时器"""
+        if hasattr(self, 'check_arrival_timer'):
+            self.check_arrival_timer.stop()
+        super().closeEvent(event)
 
 # Send页面窗口
 class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
-    def __init__(self, main_window=None):
+    def __init__(self, main_window=None,comm_node=None, status_bar_ctrl=None):
         super().__init__()
         self.setupUi(self)
         self.setWindowOpacity(0.0)
         self.main_window = main_window
-        
+        self.comm_node = comm_node
+
+        self.delivery_list = []
+
         # 初始化自适应功能
         self.init_adaptive(1208, 800)
         # 注册状态栏控件（没有日期控件就传None）
@@ -516,7 +679,7 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
         self.original_keypad_styles[self.btnNumClear] = self.btnNumClear.styleSheet()
         self.original_keypad_styles[self.btnNumConfirm] = self.btnNumConfirm.styleSheet()
 
-        self.face_window = FaceWindow(main_window)
+        self.face_window = FaceWindow(main_window, comm_node=self.comm_node)
         
 
     def init_dropdowns(self):
@@ -572,19 +735,19 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
         unit_text = f"{address['unit']}单元"
         
         # 打印调试信息
-        print(f"使用常用地址: 楼栋={building_text}, 单元={unit_text}, 房间={address['room']}")
+        # print(f"使用常用地址: 楼栋={building_text}, 单元={unit_text}, 房间={address['room']}")
         
         # 设置下拉框值
         building_index = self.cmbBuilding.findText(building_text)
         if building_index >= 0:
-            print(f"找到楼栋索引: {building_index}")
+            # print(f"找到楼栋索引: {building_index}")
             self.cmbBuilding.setCurrentIndex(building_index)
         else:
             print(f"未找到楼栋: {building_text}")
                 
         unit_index = self.cmbUnit.findText(unit_text)
         if unit_index >= 0:
-            print(f"找到单元索引: {unit_index}")
+            # print(f"找到单元索引: {unit_index}")
             self.cmbUnit.setCurrentIndex(unit_index)
         else:
             print(f"未找到单元: {unit_text}")
@@ -708,7 +871,7 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
         self.overlay.show()
         
         # 创建任务成功对话框
-        from TaskSuccessDialog import Ui_Dialog
+        
         
         # 创建对话框
         self.task_dialog = QtWidgets.QDialog(self)
@@ -744,6 +907,7 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
 
     def on_task_dialog_cancel(self):
         # 关闭对话框
+        self.delivery_list = []  # 清空配送列表
         self.task_dialog.close()
         # 移除背景遮罩
         if hasattr(self, 'overlay'):
@@ -751,6 +915,19 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
             self.overlay.deleteLater()
 
     def on_task_dialog_confirm(self):
+
+        if self.delivery_list:
+            # 拼接成服务需要的字符串格式
+            delivery_str = ";".join(self.delivery_list)
+            resp = self.comm_node.call_ui_get(delivery_str)
+            if resp and resp.received:
+                # print("配送信息已发布:", delivery_str)
+                self.delivery_list.clear()
+            else:
+                print("配送服务调用失败！")
+        else:
+            print("配送列表为空，请先设置配送信息！")
+
         # 关闭对话框
         self.task_dialog.close()
         # 移除背景遮罩
@@ -761,31 +938,49 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
         # 跳转到Face动画页面
         self.hide()              # 可选：隐藏当前窗口
         # 重新创建FaceWindow实例，确保定时器重新启动
-        self.face_window = FaceWindow(self.main_window)
+        # self.face_window = FaceWindow(self.main_window)
         # self.face_window.show()  # 显示face窗口
         self.face_window.showFullScreen()
 
 
     def update_current_address(self):
+
+        self.delivery_list = []  # 清空配送列表
         # 获取当前选择的楼栋和单元
         building = self.cmbBuilding.currentText()
         unit = self.cmbUnit.currentText()
         
         # 打印调试信息
-        print(f"更新地址: 楼栋={building}, 单元={unit}, 房间={self.room_number}")
+        # print(f"更新地址: 楼栋={building}, 单元={unit}, 房间={self.room_number}")
         
         # 检查是否选择了有效的楼栋和单元
         if building == "--" or unit == "--" or not self.room_number:
             # 如果信息不完整，不显示地址
             self.frmCurrentAddress.setText("")
             return
+        
+        # 解析房间号，提取层和室   
+        room_str = str(self.room_number)
+        if len(room_str) == 4:
+            # 4位数：前2位是层，后2位是室
+            floor = room_str[:2]
+            room = room_str[2:]
+        elif len(room_str) == 3:
+            # 3位数：第1位是层，后2位是室
+            floor = room_str[:1]
+            room = room_str[1:]
+        else:
+            # 其他情况，使用原房间号作为室号，层为空
+            floor = ""
+            room = room_str
                 
-        # 组合成完整地址，使用汉字版本
-        full_address = f"{building} {unit} {self.room_number}室"
-        print(f"完整地址: {full_address}")
+        # 组合成配送信息格式
+        delivery_info = f"{building},{unit},{floor},{room}"
+        self.delivery_list.append(delivery_info)
             
-        # 更新当前地址显示
-        self.frmCurrentAddress.setText(full_address)
+        # 更新当前地址显示（保持原有显示格式）
+        display_address = f"{building} {unit} {self.room_number}室"
+        self.frmCurrentAddress.setText(display_address)
 
     def fade_in(self, duration=100):
         self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
@@ -804,24 +999,24 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
         self.frmCurrentAddress.setText("")
 
     def go_back(self):
-        print("\n\nSendWindow - 返回按钮被点击 - go_back方法被调用\n\n")
-        print(f"返回按钮对象: {self.btnBack}")
-        print(f"返回按钮连接的槽函数: {self.btnBack.receivers(self.btnBack.clicked)}个")
+        # print("\n\nSendWindow - 返回按钮被点击 - go_back方法被调用\n\n")
+        # print(f"返回按钮对象: {self.btnBack}")
+        # print(f"返回按钮连接的槽函数: {self.btnBack.receivers(self.btnBack.clicked)}个")
         
         try:
-            print("隐藏当前窗口")
+            # print("隐藏当前窗口")
             self.hide()
-            print("当前窗口隐藏成功")
+            # print("当前窗口隐藏成功")
         except Exception as e:
             print(f"隐藏当前窗口时出错: {e}")
             import traceback
             traceback.print_exc()
             
         if hasattr(self, 'main_window') and self.main_window:
-            print(f"主窗口存在，显示主窗口: {self.main_window}")
+            # print(f"主窗口存在，显示主窗口: {self.main_window}")
             try:
                 self.main_window.showFullScreen()
-                print("主窗口显示成功")
+                # print("主窗口显示成功")
             except Exception as e:
                 print(f"显示主窗口时出错: {e}")
                 import traceback
@@ -832,30 +1027,36 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
 # 首页窗口
 # 在MainWindow类的__init__方法中添加
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow, AdaptiveMixin):
-    def __init__(self):
+    def __init__(self, comm_node,status_bar_ctrl):
         super().__init__()
         self.setupUi(self)
-        
+
+        self.comm_node = comm_node
+        self.comm_node.signal_set_pickup_code.connect(self.on_set_pickup_code)
+
         # 初始化自适应功能（可能需要调整或注释掉）
         self.init_adaptive(1208, 800)
         
         
         # 注册状态栏控件
         status_bar_ctrl.register(self.lblTime, self.lblDate, self.lblSignal, self.lblwifi, self.lblBattery)
-        print("\n\n初始化MainWindow...\n\n")
-        self.send_window = SendWindow(self)
-        print(f"创建SendWindow实例: {self.send_window}")
+        # print("\n\n初始化MainWindow...\n\n")
+        self.send_window = SendWindow(self, comm_node=self.comm_node,status_bar_ctrl=status_bar_ctrl)
+        # print(f"创建SendWindow实例: {self.send_window}")
         self.frmCreateTask.mousePressEvent = self.open_send_window
-        print("连接寄件窗口点击事件")
+        # print("连接寄件窗口点击事件")
         
-        self.pickup_window = PickupWindow(self)
-        print(f"创建PickupWindow实例: {self.pickup_window}")
-        print(f"PickupWindow的main_window属性: {self.pickup_window.main_window}")
+        self.pickup_window = PickupWindow(self, comm_node=self.comm_node,status_bar_ctrl=status_bar_ctrl)
+        # print(f"创建PickupWindow实例: {self.pickup_window}")
+        # print(f"PickupWindow的main_window属性: {self.pickup_window.main_window}")
         self.frmPickupParcel.mousePressEvent = self.open_pickup_window
-        print("连接取件窗口点击事件")
+        # print("连接取件窗口点击事件")
 
         # 添加全屏显示
         self.showFullScreen()
+
+    def on_set_pickup_code(self, code):
+        self.pickup_window.set_valid_codes(code)
 
     def open_send_window(self, event):
         self.send_window.reset_ui() # 在显示SendWindow之前重置UI
@@ -864,7 +1065,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow, AdaptiveMixin):
         self.hide()
 
     def open_pickup_window(self, event):
-        print("\n\n打开取件窗口\n\n")
+        # print("\n\n打开取件窗口\n\n")
         try:
             # 确保pickup_window已正确初始化，并且main_window参数为self
             if not hasattr(self, 'pickup_window') or self.pickup_window is None:
@@ -877,32 +1078,32 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow, AdaptiveMixin):
             except Exception:
                 pass
             self.pickup_window.back_button.clicked.connect(self.pickup_window.show_main_window)
-            print("返回按钮已连接到show_main_window方法")
-            print(f"返回按钮: {self.pickup_window.back_button}")
-            print(f"show_main_window方法: {self.pickup_window.show_main_window}")
+            # print("返回按钮已连接到show_main_window方法")
+            # print(f"返回按钮: {self.pickup_window.back_button}")
+            # print(f"show_main_window方法: {self.pickup_window.show_main_window}")
             
             # 检查main_window属性
-            print(f"PickupWindow的main_window属性: {self.pickup_window.main_window}")
+            # print(f"PickupWindow的main_window属性: {self.pickup_window.main_window}")
             
             # 确保返回按钮可见
             self.pickup_window.back_button.setVisible(True)
             self.pickup_window.back_button.raise_()
             
             # 测试返回按钮是否可点击
-            print(f"返回按钮是否可见: {self.pickup_window.back_button.isVisible()}")
-            print(f"返回按钮是否启用: {self.pickup_window.back_button.isEnabled()}")
-            print(f"返回按钮文本: {self.pickup_window.back_button.text()}")
-            print(f"返回按钮大小: {self.pickup_window.back_button.size()}")
-            print(f"返回按钮位置: {self.pickup_window.back_button.pos()}")
+            # print(f"返回按钮是否可见: {self.pickup_window.back_button.isVisible()}")
+            # print(f"返回按钮是否启用: {self.pickup_window.back_button.isEnabled()}")
+            # print(f"返回按钮文本: {self.pickup_window.back_button.text()}")
+            # print(f"返回按钮大小: {self.pickup_window.back_button.size()}")
+            # print(f"返回按钮位置: {self.pickup_window.back_button.pos()}")
             
             self.pickup_window.showFullScreen()  # 显示取件窗口
             
             # 在窗口显示后再次确保返回按钮可见
             QtCore.QTimer.singleShot(100, lambda: self.ensure_button_visible())
             
-            print("取件窗口已显示")
+            # print("取件窗口已显示")
             self.hide()                # 隐藏主页窗口
-            print("主页窗口已隐藏")
+            # print("主页窗口已隐藏")
         except Exception as e:
             print(f"打开取件窗口时出错: {e}")
             import traceback
@@ -912,14 +1113,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow, AdaptiveMixin):
         if hasattr(self, 'pickup_window') and self.pickup_window:
             # 确保返回按钮可见
             self.pickup_window.back_button.setVisible(True)
-            print(f"延迟设置返回按钮可见性: {self.pickup_window.back_button.isVisible()}")
+            # print(f"延迟设置返回按钮可见性: {self.pickup_window.back_button.isVisible()}")
             self.pickup_window.back_button.raise_()
-            print(f"延迟提升返回按钮到顶层")
-            print(f"返回按钮位置: {self.pickup_window.back_button.pos()}")
-            print(f"返回按钮大小: {self.pickup_window.back_button.size()}")
+            # print(f"延迟提升返回按钮到顶层")
+            # print(f"返回按钮位置: {self.pickup_window.back_button.pos()}")
+            # print(f"返回按钮大小: {self.pickup_window.back_button.size()}")
 
+# 在单独线程中运行rospy.spin
+def ros_spin():
+    rospy.spin()
 
-if __name__ == "__main__":
+def main(args=None):
     app = QtWidgets.QApplication(sys.argv)
     
     # 添加这个函数来移除所有窗口的边框
@@ -935,11 +1139,21 @@ if __name__ == "__main__":
     remove_title_bar(QtWidgets.QDialog)
     remove_title_bar(QtWidgets.QWidget)
 
-    # 模拟全局充电状态变化（比如5秒后开始充电）
-    QtCore.QTimer.singleShot(5000, lambda: status_bar_ctrl.set_charging(True))
-    # 10秒后取消充电
-    QtCore.QTimer.singleShot(10000, lambda: status_bar_ctrl.set_charging(False))
+    rospy.init_node("ui_node")
+    node = UiNode()
+    rospy.loginfo("Waiting for UI_get service...")
+    node.ui_get_client.wait_for_service()
+    rospy.loginfo("UI_get service is available.")
 
-    win = MainWindow()
+    status_bar_ctrl = StatusBarController(comm_node=node)
+
+    win = MainWindow(comm_node=node,status_bar_ctrl=status_bar_ctrl)
     win.show()
+     # 启动ROS spin线程
+    thread_spin = threading.Thread(target=ros_spin)
+    thread_spin.daemon = True
+    thread_spin.start()
     sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()

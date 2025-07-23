@@ -14,6 +14,7 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     // 订阅者
     tracer_status_sub_ = nh.subscribe("/tracer_status", 10, &TaskManagerNode::tracerStatusCallback, this);
     navigation_status_sub_ = nh.subscribe("/navigation_status", 10, &TaskManagerNode::navigationStatusCallback, this);
+    ui_door_open_sub_ = nh.subscribe("/ui_door_open", 10, &TaskManagerNode::doorOpenCallback, this);
 
     // 服务客户端
     delivery_cmd_client_ = nh.serviceClient<robot_msgs::delivery>("/delivery_cmd");
@@ -66,6 +67,11 @@ void TaskManagerNode::tracerStatusCallback(const tracer_msgs::TracerStatus::Cons
 
 void TaskManagerNode::navigationStatusCallback(const std_msgs::String::ConstPtr& msg) {
     ROS_INFO("Received navigation status: %s", msg->data.c_str());
+}
+
+void TaskManagerNode::doorOpenCallback(const robot_msgs::Door_open::ConstPtr& msg) {
+    ROS_INFO("Received door open request for door %d", msg->door_num);
+    robot_voice(12);
 }
 
 // 发布者设置
@@ -223,11 +229,11 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
                 robot_msgs::pick srv;
                 srv.request.pickup_code = pickup_code_;
                 //语音提示
-                robot_voice(7); // 7是语音提示取件码
+                robot_voice(6); // 7是语音提示取件码
                 ROS_INFO("Waiting for pickup code input from UI...");
                 if (pickup_client_.call(srv)) {
                     if (srv.response.success) {
-                        robot_voice(12); // 12是语音提示取件成功
+                        robot_voice(18); // 12是语音提示取件成功
                         ROS_INFO("Pickup code correct, pickup success!");
                     } else {
                         robot_voice(15); // 13是语音提示取件失败
@@ -326,7 +332,7 @@ void TaskManagerNode::taskAssignLoop() {
             //语音提示
             robot_voice(3); // 3 机器人正在通过
             //打电话
-            robot_calling("验证码为" + std::to_string(pickup_code_));
+            robot_calling(std::to_string(pickup_code_));
 
             // door_open(4);
 
@@ -368,7 +374,7 @@ void TaskManagerNode::pickup_code_generation() {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(1000, 9999);
-    pickup_code_ = 1111;
+    pickup_code_ = -1;
     // pickup_code_ = dis(gen);
 }
 
