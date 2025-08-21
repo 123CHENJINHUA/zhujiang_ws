@@ -11,7 +11,7 @@ public:
     std::string receiveMessage(int timeout_sec = 3);
     void closeSocket();
 
-    int timeout_door_open = 10;
+    int timeout_door_open = 90;
     int timeout_delivery_cmd = 60;
 
 private:

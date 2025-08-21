@@ -1060,6 +1060,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow, AdaptiveMixin):
 
     def open_send_window(self, event):
         self.send_window.reset_ui() # 在显示SendWindow之前重置UI
+        self.comm_node.publish_door_open(door_number=1) #打开仓门
         self.send_window.showFullScreen()
         self.send_window.fade_in()
         self.hide()

@@ -134,7 +134,16 @@ class ClosethedoorDialog(QtWidgets.QDialog):
         # 设置GIF动画
         self.setup_gif_animation()
 
+        # 添加30秒自动关闭定时器
+        self.auto_close_timer = QtCore.QTimer(self)
+        self.auto_close_timer.timeout.connect(self.custom_close)
+        self.auto_close_timer.setSingleShot(True)  # 只执行一次
+        self.auto_close_timer.start(30000)  # 30秒 = 30000毫秒
+
     def custom_close(self):
+        # 停止自动关闭定时器
+        if hasattr(self, 'auto_close_timer'):
+            self.auto_close_timer.stop()
         # 执行关闭前的逻辑
         if self.comm_node:
             self.comm_node.pickup_result = True

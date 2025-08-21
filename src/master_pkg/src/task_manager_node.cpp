@@ -71,7 +71,15 @@ void TaskManagerNode::navigationStatusCallback(const std_msgs::String::ConstPtr&
 
 void TaskManagerNode::doorOpenCallback(const robot_msgs::Door_open::ConstPtr& msg) {
     ROS_INFO("Received door open request for door %d", msg->door_num);
-    robot_voice(12);
+    Is_door_close = false;
+    robot_voice(20);
+    robot_voice(19);
+    // 创建线程执行门控制操作
+    std::thread door_control_thread([this]() {
+        bigDoorOpen();
+        Is_door_close = true;
+    });
+    door_control_thread.detach(); // 分离线程，让它独立运行
 }
 
 // 发布者设置
@@ -92,7 +100,7 @@ void TaskManagerNode::pub_setup() {
 
 //机器人状态发布实现
 void TaskManagerNode::publishUiShowLoop() {
-    ros::Rate rate(10); // 1Hz
+    ros::Rate rate(5); // 降低到5Hz，减少对系统资源的争夺
     while (ros::ok()) {
 
         // 更新机器人状态
@@ -123,17 +131,29 @@ void TaskManagerNode::client_setup() {
 
 // 客户端调用实现
 bool TaskManagerNode::deliveryCmd(robot_msgs::delivery& req) {
-    if (delivery_cmd_client_.call(req)) {
-        if (req.response.status_msgs == true) {
-            ROS_INFO("Delivery cmd: %s : success", req.request.delivery_msgs.c_str());
-            return true;
+    const int max_retries = 3;
+    const ros::Duration retry_delay(0.5); // 500ms
+    
+    for (int attempt = 1; attempt <= max_retries; ++attempt) {
+        if (delivery_cmd_client_.call(req)) {
+            if (req.response.status_msgs == true) {
+                ROS_INFO("Delivery cmd: %s : success (attempt %d)", req.request.delivery_msgs.c_str(), attempt);
+                return true;
+            }
+            ROS_ERROR("Delivery cmd: %s : failed (attempt %d)", req.request.delivery_msgs.c_str(), attempt);
+        } else {
+            ROS_ERROR("Failed to execute delivery command: %s (attempt %d)", req.request.delivery_msgs.c_str(), attempt);
         }
-        ROS_ERROR("Delivery cmd: %s : failed", req.request.delivery_msgs.c_str());
-        return false;
-    } else {
-        ROS_ERROR("Failed to execute delivery command: %s", req.request.delivery_msgs.c_str());
-        return false;
+        
+        // 如果不是最后一次尝试，等待后重试
+        if (attempt < max_retries) {
+            ROS_WARN("Retrying delivery command in %f seconds...", retry_delay.toSec());
+            retry_delay.sleep();
+        }
     }
+    
+    ROS_ERROR("All attempts failed for command: %s", req.request.delivery_msgs.c_str());
+    return false;
 }
 
 bool TaskManagerNode::push_out(int num) {
@@ -144,6 +164,11 @@ bool TaskManagerNode::push_out(int num) {
 bool TaskManagerNode::door_open(int num) {
     delivery_req.request.delivery_msgs = "door " + std::to_string(num);
     return deliveryCmd(delivery_req); 
+}
+
+bool TaskManagerNode::bigDoorOpen() {
+    delivery_req.request.delivery_msgs = "bigDoorOpen";
+    return deliveryCmd(delivery_req);
 }
 
 bool TaskManagerNode::door_ir_control(const std::string& status) {
@@ -233,7 +258,12 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
                 ROS_INFO("Waiting for pickup code input from UI...");
                 if (pickup_client_.call(srv)) {
                     if (srv.response.success) {
-                        robot_voice(18); // 12是语音提示取件成功
+                        while(!Is_door_close)
+                        {
+                            robot_voice(19);
+                            ros::Duration(5.0).sleep();
+                        }
+                        robot_voice(18); // 18是语音提示取件成功
                         ROS_INFO("Pickup code correct, pickup success!");
                     } else {
                         robot_voice(15); // 13是语音提示取件失败
@@ -387,8 +417,8 @@ int main(int argc, char** argv) {
 
     // 发布者设置
     node.pub_setup();
-    // 客户端设置
-    // node.client_setup();
+    // 客户端设置（单片机）
+    node.client_setup();
     // 动作客户端设置
     node.action_client_setup();
     // 启动工作流

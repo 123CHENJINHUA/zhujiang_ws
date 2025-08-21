@@ -38,7 +38,7 @@ class UniqueMoveNode:
         rospy.init_node('unique_move_node')
         
         # 创建发布者，发布到/cmd_vel话题，消息类型为Twist
-        self.vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.vel_pub = rospy.Publisher('/smooth_cmd_vel', Twist, queue_size=10)
 
         # 创建新的发布者，发布到/aruco_marker_info话题，消息类型为String
         self.marker_info_pub = rospy.Publisher('/aruco_marker_info', String, queue_size=10)

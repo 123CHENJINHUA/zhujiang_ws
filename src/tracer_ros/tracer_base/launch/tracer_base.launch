@@ -12,7 +12,7 @@
     <arg name="port_name" default="can0" />
     <arg name="simulated_robot" default="false" />
 
-    <node name="tracer_base_node" pkg="tracer_base" type="tracer_base_node" output="screen">
+    <node name="tracer_base_node" pkg="tracer_base" type="tracer_base_node" respawn = "true" respawn_delay="2" output="screen">
         <param name="port_name" type="string" value="$(arg port_name)" />
         <param name="simulated_robot" type="bool" value="$(arg simulated_robot)" />
 
