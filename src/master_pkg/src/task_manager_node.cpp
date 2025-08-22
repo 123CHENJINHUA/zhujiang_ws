@@ -131,28 +131,17 @@ void TaskManagerNode::client_setup() {
 
 // 客户端调用实现
 bool TaskManagerNode::deliveryCmd(robot_msgs::delivery& req) {
-    const int max_retries = 3;
-    const ros::Duration retry_delay(0.5); // 500ms
-    
-    for (int attempt = 1; attempt <= max_retries; ++attempt) {
-        if (delivery_cmd_client_.call(req)) {
-            if (req.response.status_msgs == true) {
-                ROS_INFO("Delivery cmd: %s : success (attempt %d)", req.request.delivery_msgs.c_str(), attempt);
-                return true;
-            }
-            ROS_ERROR("Delivery cmd: %s : failed (attempt %d)", req.request.delivery_msgs.c_str(), attempt);
-        } else {
-            ROS_ERROR("Failed to execute delivery command: %s (attempt %d)", req.request.delivery_msgs.c_str(), attempt);
+    // 只执行一次，不进行重试
+    if (delivery_cmd_client_.call(req)) {
+        if (req.response.status_msgs == true) {
+            ROS_INFO("Delivery cmd: %s : success", req.request.delivery_msgs.c_str());
+            return true;
         }
-        
-        // 如果不是最后一次尝试，等待后重试
-        if (attempt < max_retries) {
-            ROS_WARN("Retrying delivery command in %f seconds...", retry_delay.toSec());
-            retry_delay.sleep();
-        }
+        ROS_ERROR("Delivery cmd: %s : failed", req.request.delivery_msgs.c_str());
+    } else {
+        ROS_ERROR("Failed to execute delivery command: %s", req.request.delivery_msgs.c_str());
     }
     
-    ROS_ERROR("All attempts failed for command: %s", req.request.delivery_msgs.c_str());
     return false;
 }
 
