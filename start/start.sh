@@ -11,7 +11,6 @@ password="123"
 #     fi
 # }
 
-
 # Configure CAN interface
 echo "Configuring CAN interface..."
 echo $password | sudo -S ip link set can0 up type can bitrate 500000
@@ -21,15 +20,16 @@ echo $password | sudo -S ip link set can0 up type can bitrate 500000
 terminator -l nav &
 sleep 2  # Wait for terminator to initialize
 
+
 # Set USB permissions and launch LiDAR camera nodes
 echo "Setting USB permissions and launching sensors..."
 terminator -e "echo '123' | sudo -S chmod 666 /dev/ttyUSB0 /dev/ttyUSB1 && cd /home/cjh/nav_ws && source devel/setup.bash && roslaunch zj_nav zj_lidarcamera.launch" --new-tab -T "LiDAR_Camera"
-sleep 5  # Wait for sensors to initialize
+sleep 2  # Wait for sensors to initialize
 
 # Launch localization and aruco
 echo "Launching localization and aruco..."
 terminator -e "cd /home/cjh/nav_ws && source devel/setup.bash && roslaunch zj_nav zj_localize.launch" --new-tab -T "Localization"
-sleep 5
+sleep 2
 
 # Publish initial pose in the first terminal
 echo "Publishing initial pose..."
@@ -39,7 +39,12 @@ sleep 5
 # Launch navigation
 echo "Launching navigation..."
 terminator -e "cd /home/cjh/nav_ws && source devel/setup.bash && roslaunch zj_nav zj_movebase.launch" --new-tab -T "Navigation"
-sleep 10
+sleep 15
+
+# Configure CAN interface
+echo "Configuring CAN interface..."
+echo $password | sudo -S ip link set can0 up type can bitrate 500000
+# check_status "CAN interface configuration"
 
 # Configure CAN and launch Tracer
 echo "Configuring CAN interface and launching Tracer base..."
