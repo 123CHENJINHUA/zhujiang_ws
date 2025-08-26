@@ -1,7 +1,7 @@
 #!/home/cjh/miniconda3/envs/zhujiang/bin/python
 
 import sys
-sys.path.insert(0, "/home/cjh/miniconda3/envs/zhujiang/lib/python3.10/site-packages")
+# sys.path.insert(0, "/home/cjh/miniconda3/envs/zhujiang/lib/python3.10/site-packages")
 sys.path.insert(0, "/home/cjh/zhujiang_ws/src")
 
 import rospy

@@ -34,12 +34,12 @@ sleep 2
 # Publish initial pose in the first terminal
 echo "Publishing initial pose..."
 terminator -e "cd /home/cjh/zhujiang_ws && source devel/setup.bash && rostopic pub /start_lio std_msgs/Bool true --once" --new-tab -T "Initialization"
-sleep 5
+sleep 15
 
 # Launch navigation
 echo "Launching navigation..."
 terminator -e "cd /home/cjh/nav_ws && source devel/setup.bash && roslaunch zj_nav zj_movebase.launch" --new-tab -T "Navigation"
-sleep 15
+sleep 5
 
 # Configure CAN interface
 echo "Configuring CAN interface..."

@@ -1,14 +1,16 @@
-#!/home/cjh/miniconda3/envs/zhujiang/bin/python
-
-import sys
-sys.path.insert(0, "/home/cjh/miniconda3/envs/zhujiang/lib/python3.10/site-packages")
-sys.path.insert(0, "/home/cjh/zhujiang_ws/src")
+#!/usr/bin/env python3
 
 import rospy
 from std_msgs.msg import String
 import threading
 import queue
 import time
+
+import sys
+# sys.path.insert(0, "/home/cjh/miniconda3/envs/zhujiang/lib/python3.10/site-packages")
+sys.path.insert(0, "/home/cjh/zhujiang_ws/src")
+
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QMessageBox
 from PyQt5.QtCore import QObject, pyqtSignal
 from UI.zhujiang_ui import *
