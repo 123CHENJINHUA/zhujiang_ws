@@ -1,0 +1,3 @@
+pactl load-module module-native-protocol-unix auth-anonymous=1
+
+xhost +local:root
