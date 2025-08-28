@@ -86,7 +86,7 @@ terminator -e "docker run -it --rm \
 
 # Wait for Docker container to be ready
 echo "Waiting for Docker container to initialize..."
-sleep 15
+sleep 25
 
 # Check if Docker container is running
 while ! docker ps | grep -q "zhujiang"; do
