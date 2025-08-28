@@ -26,6 +26,10 @@ cleanup() {
 # Set trap to catch exit signals
 trap cleanup EXIT INT TERM
 
+# Allow X11 forwarding for Docker
+echo "Setting up X11 forwarding for Docker..."
+xhost +local:docker
+
 echo "Starting Docker container in terminal..."
 
 # Launch Docker container in a new terminator tab
@@ -34,31 +38,35 @@ terminator -e "docker run -it --rm \
   --name zhujiang \
   --network=host \
   --ipc=host \
-  -e DISPLAY=\$DISPLAY \
+  --pid=host \
+  -e DISPLAY=$DISPLAY \
   -e LANG=C.UTF-8 \
   -e LC_ALL=C.UTF-8 \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /dev/dri:/dev/dri \
-  -v /dev/snd:/dev/snd \
-  -v /home/\$USER:/home/\$USER \
+  -e XDG_RUNTIME_DIR=/tmp/runtime-root \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -v /dev:/dev \
+  -v /home/$USER:/home/$USER \
   --group-add audio \
   --group-add video \
   zhujiang:v1 /bin/bash -c \"
     echo 'Docker container started successfully!'
     
+    # Set up X11 in container
+    export DISPLAY=$DISPLAY
+    
     # Launch terminator with custom layout inside Docker
     terminator -l nav &
-    sleep 2
+    sleep 3
 
     # Set USB permissions and launch LiDAR camera nodes
     echo 'Setting USB permissions and launching sensors...'
     terminator -e \\\"echo '123' | sudo -S chmod 666 /dev/ttyUSB0 /dev/ttyUSB1 && cd /home/cjh/nav_ws && source devel/setup.bash && roslaunch zj_nav zj_lidarcamera.launch\\\" --new-tab -T \\\"LiDAR_Camera\\\"
-    sleep 2
+    sleep 3
 
     # Launch localization and aruco
     echo 'Launching localization and aruco...'
     terminator -e \\\"cd /home/cjh/nav_ws && source devel/setup.bash && roslaunch zj_nav zj_localize.launch\\\" --new-tab -T \\\"Localization\\\"
-    sleep 2
+    sleep 3
 
     # Publish initial pose
     echo 'Publishing initial pose...'
@@ -112,3 +120,6 @@ while true; do
         break
     fi
 done
+
+# Cleanup X11 permissions
+# xhost -local:docker
