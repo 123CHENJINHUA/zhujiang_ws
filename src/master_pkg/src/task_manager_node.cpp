@@ -239,6 +239,8 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
     delivery_ac_->waitForResult();
     if (delivery_ac_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
         const robot_msgs::deliveryResultConstPtr& result = delivery_ac_->getResult();
+        robot_door_control("stop"); // 发送停止开门指令
+        
         if (result) {
             task_status_ = result->info; // 将info赋值给current_task_show_
             ROS_INFO("Delivery succeeded! info: %s", result->info.c_str());
@@ -271,9 +273,8 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
         }
     } else {
         ROS_WARN("Delivery failed!");
+        robot_door_control("stop"); // 发送停止开门指令
     }
-
-    robot_door_control("stop"); // 发送停止开门指令
 }
 
 
