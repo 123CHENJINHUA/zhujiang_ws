@@ -10,6 +10,7 @@ TaskManagerNode::TaskManagerNode(ros::NodeHandle& nh)
     ui_show_pub_ = nh.advertise<robot_msgs::ui_show>("/UI_show", 10);
     speach_client_ = nh.advertise<std_msgs::String>("/speach", 10);
     calling_client_ = nh.advertise<std_msgs::String>("/calling", 10);
+    door_control_pub_ = nh.advertise<std_msgs::String>("/door_control", 10);
 
     // 订阅者
     tracer_status_sub_ = nh.subscribe("/tracer_status", 10, &TaskManagerNode::tracerStatusCallback, this);
@@ -88,10 +89,11 @@ void TaskManagerNode::pub_setup() {
     ROS_INFO("Waiting for UI_show, speach, and calling subscribers...");
     while (ui_show_pub_.getNumSubscribers() == 0 ||
            speach_client_.getNumSubscribers() == 0 ||
-           calling_client_.getNumSubscribers() == 0) {
+           calling_client_.getNumSubscribers() == 0 ||
+           door_control_pub_.getNumSubscribers() == 0) {
         ros::Duration(0.1).sleep();
     }
-    ROS_INFO("UI_show, speach, and calling subscribers connected!");
+    ROS_INFO("UI_show, speach, calling, and door_control subscribers connected!");
 
     // 启动独立线程循环发布机器人状态
     std::thread pub_thread(&TaskManagerNode::publishUiShowLoop, this);
@@ -232,6 +234,8 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
 
     robot_voice(100); // 100对应播放歌曲的指令，行驶过程中播放歌曲
 
+    robot_door_control("open"); // 发送打开门指令
+
     delivery_ac_->waitForResult();
     if (delivery_ac_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
         const robot_msgs::deliveryResultConstPtr& result = delivery_ac_->getResult();
@@ -268,6 +272,8 @@ void TaskManagerNode::sendDeliveryGoal(const std::vector<int>& task) {
     } else {
         ROS_WARN("Delivery failed!");
     }
+
+    robot_door_control("stop"); // 发送停止开门指令
 }
 
 
@@ -386,6 +392,13 @@ void TaskManagerNode::robot_calling(const std::string& msg) {
     calling_msg.data = msg;
     calling_client_.publish(calling_msg);
     ROS_INFO("Robot calling command sent: %s", msg.c_str());
+}
+
+void TaskManagerNode::robot_door_control(const std::string& msg) {
+    std_msgs::String door_msg;
+    door_msg.data = msg;
+    door_control_pub_.publish(door_msg);
+    ROS_INFO("Robot door control command sent: %s", msg.c_str());
 }
 
 void TaskManagerNode::pickup_code_generation() {

@@ -67,6 +67,7 @@ private:
     // 功能函数
     void robot_voice(int num);
     void robot_calling(const std::string& msg);
+    void robot_door_control(const std::string& msg);
     void pickup_code_generation();
 
     // 发布者
@@ -76,6 +77,7 @@ private:
     ros::Publisher ui_show_pub_;
     ros::Publisher speach_client_;
     ros::Publisher calling_client_;
+    ros::Publisher door_control_pub_;
 
     void publishUiShowLoop();
 
