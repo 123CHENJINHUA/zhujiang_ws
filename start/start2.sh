@@ -30,8 +30,11 @@ trap cleanup EXIT INT TERM
 echo "Setting up X11 forwarding for Docker..."
 xhost +local:docker
 
-echo "Starting Docker container in terminal..."
+# Launch terminator with custom layout
+terminator -l nav &
+sleep 2  # Wait for terminator to initialize
 
+echo "Starting Docker container in terminal..."
 # Launch Docker container in a new terminator tab
 terminator -e "docker run -it --rm \
   --privileged=true \

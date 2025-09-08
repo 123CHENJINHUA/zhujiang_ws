@@ -19,11 +19,11 @@ public:
         as_.start();
         ROS_INFO("Delivery Action Server started.");
 
-        // Load addresses from YAML file
+        // Set default initial position (fallback if not found in YAML)
+        init_position_ = {{0.087, -1.585, 0.0}, {0.0, 0.0, 0.99, -0.0135}}; // Default position and orientation
+        
+        // Load addresses from YAML file (this may override init_position_ if 0,0,0,0 exists)
         loadAddressesFromYAML();
-
-        // Set default initial position
-        init_position_ = {{0.26, -0.89, 0.0}, {0.0, 0.0, 0.99, -0.015}}; // Default position and orientation
     }
 
     void loadAddressesFromYAML()
@@ -73,13 +73,27 @@ public:
                     
                     // Store in the map
                     address_positions_[key] = std::make_pair(position, rotation);
-                    ROS_INFO_STREAM("Loaded position for address " << name << 
-                        ": x=" << position[0] << 
-                        ", y=" << position[1] << 
-                        ", z=" << position[2] <<
-                        ", rotation: [" << rotation[0] << ", " << 
-                        rotation[1] << ", " << rotation[2] << ", " << 
-                        rotation[3] << "]");
+                    
+                    // Check if this is the initial position (0,0,0,0)
+                    if (addr_components[0] == 0 && addr_components[1] == 0 && 
+                        addr_components[2] == 0 && addr_components[3] == 0) {
+                        init_position_ = std::make_pair(position, rotation);
+                        ROS_INFO_STREAM("Loaded initial position from address " << name << 
+                            ": x=" << position[0] << 
+                            ", y=" << position[1] << 
+                            ", z=" << position[2] <<
+                            ", rotation: [" << rotation[0] << ", " << 
+                            rotation[1] << ", " << rotation[2] << ", " << 
+                            rotation[3] << "]");
+                    } else {
+                        ROS_INFO_STREAM("Loaded position for address " << name << 
+                            ": x=" << position[0] << 
+                            ", y=" << position[1] << 
+                            ", z=" << position[2] <<
+                            ", rotation: [" << rotation[0] << ", " << 
+                            rotation[1] << ", " << rotation[2] << ", " << 
+                            rotation[3] << "]");
+                    }
                 }
             }
             ROS_INFO("Successfully loaded addresses from YAML file");
