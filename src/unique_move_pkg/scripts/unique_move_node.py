@@ -66,7 +66,7 @@ class UniqueMoveNode:
         self.angle2wall = None
         self.center2edge_offset = self.car.W / 2.0  # 小车中心到边缘的偏移量
         self.camera_angle_offset = 0
-        self.wall2edge_offset = 0.05
+        self.wall2edge_offset = 0.35
 
         self.move_history = []  # 记录每步操作 (angle, distance)
 

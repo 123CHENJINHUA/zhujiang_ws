@@ -31,8 +31,13 @@ include_directories(
 )
 
 add_executable(pose_estimation_node src/pose_estimation_node.cpp)
+add_executable(marker_detection_service src/marker_detection_service.cpp)
 
 target_link_libraries(pose_estimation_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(marker_detection_service
   ${catkin_LIBRARIES}
 )
 
@@ -49,6 +54,7 @@ target_link_libraries(pose_estimation_node
 catkin_install_python(PROGRAMS
   scripts/unique_move_node.py
   scripts/test.py
+  scripts/test_marker.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
