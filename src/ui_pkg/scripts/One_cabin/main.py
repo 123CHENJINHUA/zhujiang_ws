@@ -704,9 +704,9 @@ class SendWindow(QtWidgets.QWidget, Ui_SendWindow, AdaptiveMixin):
         # 这里可以从数据库或配置文件中读取常用地址
         # 暂时使用模拟数据
         frequent_addresses = [
-            {"building": "1", "unit": "2", "room": "301"},
-            {"building": "2", "unit": "3", "room": "502"},
-            {"building": "3", "unit": "1", "room": "101"}
+            {"building": "1", "unit": "1", "room": "101"},
+            {"building": "1", "unit": "1", "room": "102"},
+            {"building": "1", "unit": "1", "room": "103"}
         ]
         
         # 设置常用地址按钮 - 避免闭包问题
